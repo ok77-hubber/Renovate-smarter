@@ -1,0 +1,38 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-display: "Space Grotesk", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+  
+  --color-brand-slate: #1C242B;
+  --color-brand-beige: #FAF9F6;
+  --color-brand-clay: #C47A5C;
+  --color-brand-olive: #5B6D5E;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-brand-beige);
+  color: #1a202c;
+  overflow-x: hidden;
+}
+
+h1, h2, h3, h4, h5, head, [data-font="display"] {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+}
+
+code, pre, [data-font="mono"] {
+  font-family: var(--font-mono);
+}
+
+/* Smooth active focus lines */
+.focus-ring {
+  @apply focus:outline-none focus:ring-2 focus:ring-brand-clay/35 focus:border-brand-clay;
+}
+
+/* Beautiful custom range input formatting */
+input[type="range"] {
+  accent-color: var(--color-brand-clay);
+}

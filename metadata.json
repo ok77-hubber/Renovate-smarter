@@ -1,0 +1,6 @@
+{
+  "name": "Renovate Smarter",
+  "description": "An interactive AI home renovation planner that designs beautiful tailored space layouts, design recommendations, and Feng Shui-tuned budget breakdowns based on your house type and preferences.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
