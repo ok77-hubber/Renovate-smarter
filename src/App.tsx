@@ -8,6 +8,7 @@ import {
 import Header from "./components/Header";
 import { RenovateInputs, RenovateProposal, PricingPlanTier } from "./types";
 import { supabase } from "./supabase";
+import { DiscussionEmbed } from "disqus-react";
 
 // Premade Floor Plan Templates for immediate instant testing
 const DEMO_FLOOR_PLANS = [
@@ -1936,6 +1937,41 @@ export default function App() {
           </div>
         </section>
       )}
+
+      {/* SOCIAL DISCUSSION FORUM */}
+      <section className="w-full max-w-7xl mx-auto px-4 py-8 sm:py-12 md:px-6" id="social-discussion-section">
+        <div className="bg-[#FAF9F6] rounded-3xl p-6 sm:p-8 border border-stone-200/80 shadow-xs">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-stone-200/60 pb-5 mb-6">
+            <div>
+              <span className="text-[10px] uppercase tracking-[0.2em] font-mono text-[#C47A5C] font-bold block mb-1">
+                05. Atelier Social Matrix
+              </span>
+              <h3 className="text-2xl font-serif text-[#1C242B] tracking-tight">
+                Design Stream & Homeowner Forum
+              </h3>
+              <p className="text-xs text-stone-500 mt-1 leading-relaxed max-w-xl font-light">
+                Discuss live blueprints, seek reviews on renovation color matches, and connect with other designers. Powered securely by Disqus.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 bg-white border border-stone-150 rounded-xl px-3 py-1.5 text-[10px] font-mono text-stone-600 shrink-0 self-start md:self-center">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+              <span>Social Channel Active • 繁中/EN Support</span>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl p-4 sm:p-6 border border-stone-150 shadow-2xs">
+            <DiscussionEmbed
+              shortname="renovate-smarter"
+              config={{
+                url: typeof window !== "undefined" ? window.location.href : "https://renovate-smarter.example.com",
+                identifier: proposalResult?.themeName ? `renovate-smarter-proposal-${proposalResult.themeName.toLowerCase().replace(/\s+/g, "-")}` : "renovate-smarter-forum-root",
+                title: proposalResult?.themeName || "Studio Atelier AI Renovate Smarter Community Hub",
+                language: "zh_TW"
+              }}
+            />
+          </div>
+        </div>
+      </section>
 
       {/* FOOTER */}
       <footer className="bg-white border-t border-stone-200/60 py-8 px-4 mt-auto">
