@@ -33,11 +33,55 @@ const DEMO_FLOOR_PLANS = [
 ];
 
 const PRESET_COLOR_SCHEMES = [
-  { name: "Japandi Classic", bg: "#F4EFEB", text: "#3E3B39", desc: "Warm timbers paired with linen and soft bone whites." },
-  { name: "Slate Minimalist", bg: "#EAECEE", text: "#1F2327", desc: "Monochromatic stone, industrial charcoal, and concrete tones." },
-  { name: "Emerald Botanical", bg: "#EBF1ED", text: "#223F2B", desc: "De-saturated sage, rich olive, and polished brass accents." },
-  { name: "Terracotta Earth", bg: "#F8ECE6", text: "#783B25", desc: "Baked clay bricks, soft sand, and natural rattan elements." },
-  { name: "Celestial Dusk", bg: "#EFF2F7", text: "#1A2536", desc: "Atmospheric twilight blue blended with warm zinc and steel." }
+  { 
+    name: "Japandi Classic", 
+    bg: "#EFEBE4", 
+    text: "#3E3B39", 
+    desc: "Warm oak timbers paired with linen and soft bone whites. Highly favored in Singapore HDB flats.",
+    image: "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=400&q=80"
+  },
+  { 
+    name: "Minimalist Muji", 
+    bg: "#F9F6F0", 
+    text: "#4C3F34", 
+    desc: "Clean ash logs, pale cream walls, and organic storage aesthetics loved by young Singaporean couples.",
+    image: "https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=400&q=80"
+  },
+  { 
+    name: "Modern Luxury", 
+    bg: "#D2D5D6", 
+    text: "#182025", 
+    desc: "Rich grey marble, gold trims, polished steel, and dark walnut panels popular in premium Singapore Condos.",
+    image: "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=400&q=80"
+  },
+  { 
+    name: "Scandi-Industrial", 
+    bg: "#CCCCCC", 
+    text: "#22252A", 
+    desc: "Cement screed, exposed conduit tracks, matte black iron frames, and tan leather accents.",
+    image: "https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=400&q=80"
+  },
+  { 
+    name: "Wabi-Sabi Sanctuary", 
+    bg: "#DECBB7", 
+    text: "#5D4037", 
+    desc: "Microcement walls, sandy travertine, earthen raw clay, and textured natural fibres.",
+    image: "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=400&q=80"
+  },
+  { 
+    name: "Contemporary Greige", 
+    bg: "#E1DDD5", 
+    text: "#4E4B43", 
+    desc: "Timeless blend of grey and warm beige, tailored linen, and bright airy spaces.",
+    image: "https://images.unsplash.com/photo-1600210491892-03d54c0aaf87?auto=format&fit=crop&w=400&q=80"
+  },
+  { 
+    name: "Emerald Botanical", 
+    bg: "#D5E0D5", 
+    text: "#1F3A24", 
+    desc: "Calming desaturated sage, rich forest green accents, and copper hardware to invite the outdoors in.",
+    image: "https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=400&q=80"
+  }
 ];
 
 const SINGAPORE_TOWNS: Record<string, string[]> = {
@@ -207,6 +251,10 @@ export default function App() {
   const [isRefining, setIsRefining] = useState(false);
   const [colorSource, setColorSource] = useState<"preset" | "moodboard">("preset");
   const [isMoodboardDragging, setIsMoodboardDragging] = useState(false);
+
+  // Layout and visualization sub-tabs
+  const [inputsTab, setInputsTab] = useState<"specs" | "style" | "notes">("specs");
+  const [resultsTab, setResultsTab] = useState<"map" | "budget" | "insights">("map");
 
   // Real-time design stream state
   const [entries, setEntries] = useState<any[]>([]);
@@ -772,388 +820,487 @@ export default function App() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-12">
             
             {/* Left Hand: The Form Inputs Configurer */}
-            <aside className="lg:col-span-5 bg-white p-6 sm:p-8 rounded-2xl border border-stone-200/60 shadow-sm flex flex-col gap-6">
+            <aside className="lg:col-span-12 xl:col-span-5 bg-white p-6 sm:p-7 rounded-2xl border border-stone-200/60 shadow-sm flex flex-col gap-5">
               
-              <div>
-                <span className="text-[10px] uppercase tracking-[0.2em] font-mono text-[#C47A5C] font-bold block mb-1">Step 02</span>
-                <h2 className="text-2xl font-serif text-[#1C242B]">Project Metadata</h2>
-                <div className="h-0.5 w-12 bg-[#1C242B] mt-2" />
-              </div>
-
-              {/* 1. Housing Type Selection */}
-              <div className="flex flex-col gap-2">
-                <label className="text-xs uppercase tracking-widest text-[#6B6B6B] font-bold font-mono">01. Housing Architecture</label>
-                <div className="grid grid-cols-2 gap-2 mt-1">
-                  {["Landed Property", "Condominium", "HDB / Apartment", "Commercial Space"].map((type) => (
-                    <button
-                      key={type}
-                      type="button"
-                      onClick={() => setInputs(prev => ({ ...prev, housingType: type }))}
-                      className={`text-xs px-3 py-2.5 text-left rounded-lg transition-all border duration-200 ${
-                        inputs.housingType === type
-                          ? "bg-[#1C242B] text-white border-[#1C242B]"
-                          : "bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100"
-                      }`}
-                    >
-                      {type}
-                    </button>
-                  ))}
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] uppercase tracking-[0.2em] font-mono text-[#C47A5C] font-bold block mb-1">Step 02</span>
+                  <h2 className="text-xl font-serif text-[#1C242B]">Project Metadata</h2>
+                  <div className="h-0.5 w-12 bg-[#1C242B] mt-1.5" />
+                </div>
+                <div className="text-[10px] font-mono bg-stone-100 text-stone-600 px-2 py-1 rounded-md border border-stone-200/50">
+                  Interactive Planner
                 </div>
               </div>
 
-              {/* 2. Geographic Context Location */}
-              <div className="flex flex-col gap-2" id="location-dropdown-wrapper">
-                <label className="text-xs uppercase tracking-widest text-[#6B6B6B] font-bold font-mono" htmlFor="location-input">02. Geographic Context</label>
-                <div className="relative">
-                  <MapPin className="w-4 h-4 text-stone-400 absolute left-3 top-3.5 z-10 pointer-events-none" />
-                  <button
-                    id="location-input"
-                    type="button"
-                    onClick={() => {
-                      setIsLocationDropdownOpen(!isLocationDropdownOpen);
-                      setLocationSearchQuery("");
-                    }}
-                    className="w-full pl-9 pr-10 py-2.5 text-left text-sm bg-stone-50 border-b border-stone-300 focus:outline-none focus:border-[#1C242B] hover:bg-stone-100/50 transition-all flex items-center justify-between cursor-pointer"
-                  >
-                    <span className="text-stone-800 font-medium">
-                      {inputs.location || "Select town / precinct"}
-                    </span>
-                    <ChevronDown className={`w-4 h-4 text-stone-400 transition-transform duration-200 ${isLocationDropdownOpen ? "rotate-180" : ""}`} />
-                  </button>
-
-                  {isLocationDropdownOpen && (
-                    <div className="absolute z-50 left-0 right-0 mt-1 bg-white border border-stone-200 shadow-xl rounded-xl overflow-hidden max-h-80 flex flex-col transition-all">
-                      {/* Search Bar */}
-                      <div className="p-2 border-b border-stone-100 flex items-center gap-2 bg-stone-50/50">
-                        <Search className="w-3.5 h-3.5 text-stone-400 shrink-0" />
-                        <input
-                          type="text"
-                          placeholder="Search town or region..."
-                          value={locationSearchQuery}
-                          onChange={(e) => setLocationSearchQuery(e.target.value)}
-                          className="w-full bg-transparent text-xs text-stone-800 outline-none focus:ring-0 py-1"
-                          autoFocus
-                        />
-                        {locationSearchQuery && (
-                          <button
-                            type="button"
-                            onClick={() => setLocationSearchQuery("")}
-                            className="text-stone-400 hover:text-stone-600 p-0.5"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        )}
-                      </div>
-
-                      {/* Dropdown Options */}
-                      <div className="overflow-y-auto py-1 flex-1 max-h-60 scrollbar-thin">
-                        {Object.keys(filteredTowns).length === 0 ? (
-                          <div className="px-4 py-3 text-xs text-stone-400 text-center uppercase tracking-wider">
-                            No matching towns found
-                          </div>
-                        ) : (
-                          Object.entries(filteredTowns).map(([region, towns]) => (
-                            <div key={region} className="mb-2">
-                              {/* Region Header */}
-                              <div className="px-3 py-1 text-[10px] uppercase font-mono font-bold tracking-widest text-stone-400 bg-[#FAF9F6]">
-                                {region}
-                              </div>
-                              {/* Towns under Region */}
-                              <div className="space-y-0.5 mt-1">
-                                {towns.map((town) => {
-                                  const isSelected = inputs.location === town;
-                                  return (
-                                    <button
-                                      key={town}
-                                      type="button"
-                                      onClick={() => {
-                                        setInputs(prev => ({ ...prev, location: town }));
-                                        setIsLocationDropdownOpen(false);
-                                      }}
-                                      className={`w-full px-4 py-2 text-left text-xs transition-colors flex items-center justify-between ${
-                                        isSelected
-                                          ? "bg-[#1C242B] text-white font-medium"
-                                          : "text-stone-700 hover:bg-stone-50 hover:text-stone-900"
-                                      }`}
-                                    >
-                                      <span>{town}</span>
-                                      {isSelected && <CheckCircle className="w-3.5 h-3.5 text-orange-400" />}
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* 3. Renovation Budget */}
-              <div className="flex flex-col gap-2 bg-stone-50/50 p-4 rounded-xl border border-stone-200/55">
-                <div className="flex justify-between items-baseline mb-1">
-                  <label className="text-xs uppercase tracking-widest text-[#6B6B6B] font-bold font-mono" htmlFor="budget-input">03. Renovation budget</label>
-                  <span className="text-base font-bold text-[#C47A5C]" data-font="mono">
-                    S$ {Number(inputs.budget).toLocaleString("en-SG")} SGD
-                  </span>
-                </div>
-                <input
-                  id="budget-input"
-                  type="range"
-                  min="2000"
-                  max="1000000"
-                  step="1000"
-                  value={inputs.budget}
-                  onChange={(e) => setInputs(prev => ({ ...prev, budget: Number(e.target.value) }))}
-                  className="w-full h-1 cursor-pointer"
-                />
-                <div className="flex justify-between text-[10px] text-stone-400 font-mono mt-1">
-                  <span>Min: S$ 2,000</span>
-                  <span>Mid: S$ 501,000</span>
-                  <span>Max: S$ 1,000,000</span>
-                </div>
-              </div>
-
-              {/* 4. Project Scope Option */}
-              <div className="flex flex-col gap-3">
-                <label className="text-xs uppercase tracking-widest text-[#6B6B6B] font-bold font-mono">04. Design Focus Scope</label>
-                <div className="flex bg-stone-100 p-1 rounded-xl">
-                  <button
-                    type="button"
-                    onClick={() => setInputs(prev => ({ ...prev, scope: "whole" }))}
-                    className={`flex-1 text-center text-xs py-2 rounded-lg font-medium transition ${
-                      inputs.scope === "whole" ? "bg-white text-[#1C242B] shadow-xs" : "text-stone-500 hover:text-[#1C242B]"
-                    }`}
-                  >
-                    Whole House Renovation
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setInputs(prev => ({ ...prev, scope: "rooms" }))}
-                    className={`flex-1 text-center text-xs py-2 rounded-lg font-medium transition ${
-                      inputs.scope === "rooms" ? "bg-white text-[#1C242B] shadow-xs" : "text-stone-500 hover:text-[#1C242B]"
-                    }`}
-                  >
-                    Isolated Rooms & Areas
-                  </button>
-                </div>
-
-                {inputs.scope === "rooms" && (
-                  <div className="p-3 bg-stone-50 rounded-xl border border-stone-200 flex flex-wrap gap-1.5 animate-fadeIn">
-                    {["Living Room", "Kitchen", "Master bedroom", "Common bedroom", "Bathrooms", "Foyer & Corridor", "Balcony Garden", "Study & Office"].map((room) => {
-                      const selected = inputs.roomsSelected.includes(room);
-                      return (
-                        <button
-                          key={room}
-                          type="button"
-                          onClick={() => toggleRoomSelection(room)}
-                          className={`text-xs px-2.5 py-1.5 rounded-full border transition ${
-                            selected 
-                              ? "bg-[#C47A5C] text-white border-[#C47A5C]" 
-                              : "bg-white text-stone-600 border-stone-200 hover:bg-stone-100"
-                          }`}
-                        >
-                          {selected ? "✓ " : ""}{room}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
-              {/* 5. Color Scheme Style Palette / Mood Board */}
-              <div className="flex flex-col gap-2 bg-stone-50/40 p-4 rounded-xl border border-stone-200/50">
-                <div className="flex items-center justify-between border-b border-stone-150 pb-2 mb-2">
-                  <label className="text-xs uppercase tracking-widest text-[#6B6B6B] font-bold font-mono">05. Color Aesthetic Mood</label>
-                  <div className="flex bg-stone-200 p-0.5 rounded-md">
-                    <button
-                      type="button"
-                      onClick={() => setColorSource("preset")}
-                      className={`text-[9px] uppercase tracking-wider px-2.5 py-1 rounded transition-all duration-150 ${
-                        colorSource === "preset" ? "bg-white text-stone-800 font-bold shadow-xs" : "text-stone-600 hover:text-stone-800"
-                      }`}
-                    >
-                      Presets
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setColorSource("moodboard")}
-                      className={`text-[9px] uppercase tracking-wider px-2.5 py-1 rounded transition-all duration-150 ${
-                        colorSource === "moodboard" ? "bg-white text-stone-800 font-bold shadow-xs" : "text-stone-600 hover:text-stone-800 font-semibold"
-                      }`}
-                    >
-                      Mood Board
-                    </button>
-                  </div>
-                </div>
-
-                {colorSource === "preset" ? (
-                  <div className="space-y-2 animate-fadeIn">
-                    <select
-                      value={inputs.colorScheme}
-                      onChange={(e) => setInputs(prev => ({ ...prev, colorScheme: e.target.value }))}
-                      className="w-full bg-white border border-stone-200 py-2 px-2.5 rounded-lg text-xs tracking-wide focus:outline-none"
-                    >
-                      {PRESET_COLOR_SCHEMES.map((scheme) => (
-                        <option key={scheme.name} value={scheme.name}>
-                          {scheme.name} — ({scheme.desc.split(" ").slice(0, 3).join(" ")}...)
-                        </option>
-                      ))}
-                    </select>
-                    {/* Visual strip preview */}
-                    <div className="flex h-3 w-full rounded-md overflow-hidden gap-0.5 border border-stone-200">
-                      {PRESET_COLOR_SCHEMES.find(s => s.name === inputs.colorScheme) ? (
-                        PRESET_COLOR_SCHEMES.map((sc, i) => (
-                          <span key={i} className="flex-1 transition" style={{ backgroundColor: sc.bg }} title={sc.name} />
-                        ))
-                      ) : (
-                        <span className="flex-1 bg-gradient-to-r from-stone-400 to-amber-700" />
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-2 animate-fadeIn">
-                    {inputs.uploadedMoodBoardUrl ? (
-                      <div className="bg-white border border-stone-200/85 p-2 rounded-lg flex items-center justify-between gap-3 text-xs">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <img
-                            src={inputs.uploadedMoodBoardUrl}
-                            alt="Moodboard thumbnail"
-                            className="w-10 h-10 object-cover rounded border border-stone-200"
-                          />
-                          <div className="flex flex-col min-w-0">
-                            <span className="font-semibold text-stone-800 truncate max-w-[130px]">{inputs.uploadedMoodBoardName || "Moodboard file"}</span>
-                            <span className="text-[10px] text-[#5B6D5E]">Ready for custom AI extraction</span>
-                          </div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setInputs(prev => ({ ...prev, colorScheme: "Japandi Classic", uploadedMoodBoardUrl: "", uploadedMoodBoardName: "" }))}
-                          className="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-1.5 rounded transition"
-                          title="Remove custom scheme"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    ) : (
-                      <div 
-                        onDragOver={handleMoodboardDragOver}
-                        onDragLeave={handleMoodboardDragLeave}
-                        onDrop={handleMoodboardDrop}
-                        className={`border-2 border-dashed rounded-lg p-5 text-center transition-all duration-300 relative cursor-pointer ${
-                          isMoodboardDragging 
-                            ? "border-[#C47A5C] bg-amber-50/40 scale-[0.99]" 
-                            : "border-stone-300 bg-white hover:border-[#C47A5C] hover:bg-stone-50/40"
-                        }`}
-                      >
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              const reader = new FileReader();
-                              reader.onloadend = () => {
-                                setInputs(prev => ({
-                                  ...prev,
-                                  colorScheme: `Custom Moodboard [${file.name}]`,
-                                  uploadedMoodBoardUrl: reader.result as string,
-                                  uploadedMoodBoardName: file.name
-                                }));
-                              };
-                              reader.readAsDataURL(file);
-                            }
-                          }}
-                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                        />
-                        <Upload className={`w-5 h-5 mx-auto mb-1.5 transition-colors duration-200 ${isMoodboardDragging ? "text-[#C47A5C]" : "text-stone-400"}`} />
-                        <span className="text-xs font-semibold text-stone-700 block">
-                          {isMoodboardDragging ? "Drop your mood board here!" : "Upload custom mood board image"}
-                        </span>
-                        <span className="text-[9px] text-stone-400 block mt-0.5">Drag & drop or click to browse files (PNG, JPG, SVG styles)</span>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* 6. Other / Feng Shui Custom requirements */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs uppercase tracking-widest text-[#6B6B6B] font-bold font-mono" htmlFor="preferences-textarea">06. Bespoke Spatial Notes</label>
-                <textarea
-                  id="preferences-textarea"
-                  rows={3}
-                  value={inputs.otherPreferences}
-                  onChange={(e) => setInputs(prev => ({ ...prev, otherPreferences: e.target.value }))}
-                  placeholder="e.g. Master bed headboard alignment, pet friendly paths, low-E glass options, maximum hidden carpentry..."
-                  className="w-full bg-stone-50 border border-stone-200 rounded-lg text-xs p-3 focus:outline-none focus:border-[#C47A5C] transition-all bg-white"
-                />
-              </div>
-
-              {/* 7. Verified Builder Matchmaking */}
-              <div className="flex flex-col gap-2 bg-[#F5EFE6]/50 p-4 rounded-xl border border-[#D5C29D]/40">
-                <div className="flex items-center gap-1.5">
-                  <Hammer className="w-3.5 h-3.5 text-[#C47A5C]" />
-                  <label className="text-xs uppercase tracking-widest text-[#1C242B] font-bold font-mono">07. Builder Connection</label>
-                </div>
-                <p className="text-[10px] text-stone-600 leading-normal">
-                  Connect with vetted HDB-licensed, CaseTrust-certified Singapore boutique contractors. Skip the renovation horror stories.
-                </p>
+              {/* Redesigned Compact Input Sub-Tabs Selector */}
+              <div className="flex bg-stone-100 p-1 rounded-xl gap-1">
                 <button
                   type="button"
-                  onClick={() => setInputs(prev => ({ ...prev, wantContractorConnect: !prev.wantContractorConnect }))}
-                  className={`w-full text-left p-3 rounded-lg border transition-all flex items-start gap-2.5 cursor-pointer ${
-                    inputs.wantContractorConnect 
-                      ? "bg-[#1C242B] border-[#1C242B] text-white shadow-sm" 
-                      : "bg-white border-stone-200 text-stone-700 hover:border-[#C47A5C] hover:bg-stone-50"
+                  onClick={() => setInputsTab("specs")}
+                  className={`flex-1 text-center py-2 px-1 text-[11px] font-mono uppercase tracking-wider font-bold transition-all rounded-lg ${
+                    inputsTab === "specs" 
+                      ? "bg-white text-[#C47A5C] shadow-xs" 
+                      : "text-stone-500 hover:text-stone-800"
                   }`}
                 >
-                  <div className={`w-4 h-4 rounded-md mt-0.5 border flex items-center justify-center shrink-0 ${
-                    inputs.wantContractorConnect 
-                      ? "bg-[#C47A5C] border-[#C47A5C] text-white" 
-                      : "bg-stone-50 border-stone-300 text-transparent"
-                  }`}>
-                    ✓
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <span className="text-xs font-bold block">
-                      Connect Me with Vetted Builders
-                    </span>
-                    <span className={`text-[9px] block mt-0.5 ${
-                      inputs.wantContractorConnect ? "text-amber-200" : "text-[#C47A5C] font-semibold"
-                    }`}>
-                      Nominal compilation fee of $15 SGD
-                    </span>
-                  </div>
+                  📋 Specs
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setInputsTab("style")}
+                  className={`flex-1 text-center py-2 px-1 text-[11px] font-mono uppercase tracking-wider font-bold transition-all rounded-lg ${
+                    inputsTab === "style" 
+                      ? "bg-white text-[#C47A5C] shadow-xs" 
+                      : "text-stone-500 hover:text-[#C47A5C]"
+                  }`}
+                >
+                  🎨 Style
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setInputsTab("notes")}
+                  className={`flex-1 text-center py-2 px-1 text-[11px] font-mono uppercase tracking-wider font-bold transition-all rounded-lg ${
+                    inputsTab === "notes" 
+                      ? "bg-white text-[#C47A5C] shadow-xs" 
+                      : "text-stone-500 hover:text-[#C47A5C]"
+                  }`}
+                >
+                  ✍️ Notes
                 </button>
               </div>
 
-              {/* Action trigger button */}
-              <button
-                type="button"
-                onClick={handleGenerateProposal}
-                disabled={isGenerating}
-                className="w-full text-xs font-mono tracking-widest uppercase py-3 border-2 border-[#1C242B] bg-[#1C242B] hover:bg-[#C47A5C] hover:border-[#C47A5C] text-white rounded-xl transition duration-300 flex items-center justify-center gap-2 font-bold cursor-pointer disabled:opacity-50"
-                id="generate-proposal-trigger"
-              >
-                {isGenerating ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 animate-spin text-white" />
-                    Analyzing Blueprints... (60s)
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-4 h-4" />
-                    Atelier AI Proposal Generator
-                  </>
-                )}
-              </button>
+              <div className="flex-1 flex flex-col gap-4">
+                {/* SUB-TAB 1: SPECIFICATIONS */}
+                {inputsTab === "specs" && (
+                  <div className="space-y-4 animate-fadeIn">
+                    {/* 1. Housing Type Selection */}
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[10px] uppercase tracking-widest text-[#6B6B6B] font-bold font-mono">01. Housing Architecture</label>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {["Landed Property", "Condominium", "HDB / Apartment", "Commercial Space"].map((type) => (
+                          <button
+                            key={type}
+                            type="button"
+                            onClick={() => setInputs(prev => ({ ...prev, housingType: type }))}
+                            className={`text-[11px] px-2.5 py-2 text-left rounded-lg transition-all border duration-200 ${
+                              inputs.housingType === type
+                                ? "bg-[#1C242B] text-white border-[#1C242B]"
+                                : "bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100"
+                            }`}
+                          >
+                            {type}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
 
-              <div className="text-[10px] text-center text-stone-400 flex items-center justify-center gap-2 uppercase tracking-wide">
-                <ShieldCheck className="w-4 h-4 text-[#5B6D5E]" />
-                Premium Singapore Studio Quality
+                    {/* 2. Geographic Context Location */}
+                    <div className="flex flex-col gap-1.5" id="location-dropdown-wrapper">
+                      <label className="text-[10px] uppercase tracking-widest text-[#6B6B6B] font-bold font-mono" htmlFor="location-input">02. Geographic Context</label>
+                      <div className="relative">
+                        <MapPin className="w-3.5 h-3.5 text-stone-400 absolute left-2.5 top-3 z-10 pointer-events-none" />
+                        <button
+                          id="location-input"
+                          type="button"
+                          onClick={() => {
+                            setIsLocationDropdownOpen(!isLocationDropdownOpen);
+                            setLocationSearchQuery("");
+                          }}
+                          className="w-full pl-8 pr-10 py-2 text-left text-xs bg-stone-50 border border-stone-200 rounded-lg focus:outline-none focus:border-[#1C242B] hover:bg-stone-100/50 transition-all flex items-center justify-between cursor-pointer"
+                        >
+                          <span className="text-stone-800 font-medium">
+                            {inputs.location || "Select town / precinct"}
+                          </span>
+                          <ChevronDown className={`w-3.5 h-3.5 text-stone-400 transition-transform duration-200 ${isLocationDropdownOpen ? "rotate-180" : ""}`} />
+                        </button>
+
+                        {isLocationDropdownOpen && (
+                          <div className="absolute z-50 left-0 right-0 mt-1 bg-white border border-stone-200 shadow-xl rounded-xl overflow-hidden max-h-56 flex flex-col transition-all">
+                            {/* Search Bar */}
+                            <div className="p-2 border-b border-stone-100 flex items-center gap-2 bg-stone-50/50">
+                              <Search className="w-3 h-3 text-stone-400 shrink-0" />
+                              <input
+                                type="text"
+                                placeholder="Search town..."
+                                value={locationSearchQuery}
+                                onChange={(e) => setLocationSearchQuery(e.target.value)}
+                                className="w-full bg-transparent text-[11px] text-stone-800 outline-none focus:ring-0 py-0.5"
+                                autoFocus
+                              />
+                              {locationSearchQuery && (
+                                <button
+                                  type="button"
+                                  onClick={() => setLocationSearchQuery("")}
+                                  className="text-stone-400 hover:text-stone-600 p-0.5"
+                                >
+                                  <X className="w-2.5 h-2.5" />
+                                </button>
+                              )}
+                            </div>
+
+                            {/* Dropdown Options */}
+                            <div className="overflow-y-auto py-0.5 flex-1 max-h-40 scrollbar-thin">
+                              {Object.keys(filteredTowns).length === 0 ? (
+                                <div className="px-3 py-2 text-[10px] text-stone-400 text-center uppercase tracking-wider">
+                                  No matching towns found
+                                </div>
+                              ) : (
+                                Object.entries(filteredTowns).map(([region, towns]) => (
+                                  <div key={region} className="mb-1.5">
+                                    {/* Region Header */}
+                                    <div className="px-2.5 py-0.5 text-[9px] uppercase font-mono font-bold tracking-widest text-[#C47A5C] bg-[#FAF9F6]">
+                                      {region}
+                                    </div>
+                                    {/* Towns under Region */}
+                                    <div className="space-y-0.5 mt-0.5">
+                                      {towns.map((town) => {
+                                        const isSelected = inputs.location === town;
+                                        return (
+                                          <button
+                                            key={town}
+                                            type="button"
+                                            onClick={() => {
+                                              setInputs(prev => ({ ...prev, location: town }));
+                                              setIsLocationDropdownOpen(false);
+                                            }}
+                                            className={`w-full px-3 py-1.5 text-left text-[11px] transition-colors flex items-center justify-between ${
+                                              isSelected
+                                                ? "bg-[#1C242B] text-white font-medium"
+                                                : "text-stone-700 hover:bg-stone-50 hover:text-stone-900"
+                                            }`}
+                                          >
+                                            <span>{town}</span>
+                                            {isSelected && <CheckCircle className="w-3 h-3 text-orange-400" />}
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                ))
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* 3. Renovation Budget */}
+                    <div className="flex flex-col gap-1.5 bg-stone-50/50 p-3 rounded-xl border border-stone-200/50">
+                      <div className="flex justify-between items-baseline">
+                        <label className="text-[10px] uppercase tracking-widest text-[#6B6B6B] font-bold font-mono" htmlFor="budget-input">03. Renovation budget</label>
+                        <span className="text-xs font-bold text-[#C47A5C]" data-font="mono">
+                          S$ {Number(inputs.budget).toLocaleString("en-SG")} SGD
+                        </span>
+                      </div>
+                      <input
+                        id="budget-input"
+                        type="range"
+                        min="2000"
+                        max="1000000"
+                        step="1000"
+                        value={inputs.budget}
+                        onChange={(e) => setInputs(prev => ({ ...prev, budget: Number(e.target.value) }))}
+                        className="w-full h-1 cursor-pointer"
+                      />
+                      <div className="flex justify-between text-[9px] text-stone-400 font-mono">
+                        <span>Min: S$ 2k</span>
+                        <span>Mid: S$ 500k</span>
+                        <span>Max: S$ 1M</span>
+                      </div>
+                    </div>
+
+                    {/* 4. Project Scope Option */}
+                    <div className="flex flex-col gap-2">
+                      <label className="text-[10px] uppercase tracking-widest text-[#6B6B6B] font-bold font-mono">04. Design Focus Scope</label>
+                      <div className="flex bg-stone-100 p-0.5 rounded-lg">
+                        <button
+                          type="button"
+                          onClick={() => setInputs(prev => ({ ...prev, scope: "whole" }))}
+                          className={`flex-1 text-center text-[10px] py-1.5 rounded-md font-medium transition ${
+                            inputs.scope === "whole" ? "bg-white text-[#1C242B] shadow-xs font-bold" : "text-stone-500 hover:text-[#1C242B]"
+                          }`}
+                        >
+                          Whole House
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setInputs(prev => ({ ...prev, scope: "rooms" }))}
+                          className={`flex-1 text-center text-[10px] py-1.5 rounded-md font-medium transition ${
+                            inputs.scope === "rooms" ? "bg-white text-[#1C242B] shadow-xs font-bold" : "text-stone-500 hover:text-[#1C242B]"
+                          }`}
+                        >
+                          Rooms & Areas
+                        </button>
+                      </div>
+
+                      {inputs.scope === "rooms" && (
+                        <div className="p-2 bg-stone-50 rounded-xl border border-stone-200/70 flex flex-wrap gap-1 max-h-32 overflow-y-auto pr-1">
+                          {["Living Room", "Kitchen", "Master bedroom", "Common bedroom", "Bathrooms", "Foyer & Corridor", "Balcony Garden", "Study & Office"].map((room) => {
+                            const selected = inputs.roomsSelected.includes(room);
+                            return (
+                              <button
+                                key={room}
+                                type="button"
+                                onClick={() => toggleRoomSelection(room)}
+                                className={`text-[10px] px-2 py-1 rounded-full border transition ${
+                                  selected 
+                                    ? "bg-[#C47A5C] text-white border-[#C47A5C] font-semibold" 
+                                    : "bg-white text-stone-600 border-stone-200 hover:bg-stone-100"
+                                }`}
+                              >
+                                {selected ? "✓ " : ""}{room}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setInputsTab("style")}
+                      className="w-full mt-2 text-[10px] font-mono tracking-wider uppercase py-2 bg-[#1C242B]/5 hover:bg-[#1C242B]/10 text-[#C47A5C] rounded-lg transition text-center font-bold flex items-center justify-center gap-1 cursor-pointer"
+                    >
+                      Next: Choose style style ➔
+                    </button>
+                  </div>
+                )}
+
+                {/* SUB-TAB 2: AESTHETICS (COLOR & PALETTE) */}
+                {inputsTab === "style" && (
+                  <div className="space-y-3 animate-fadeIn">
+                    <div className="flex items-center justify-between border-b border-stone-150 pb-1.5">
+                      <label className="text-[10px] uppercase tracking-widest text-[#6B6B6B] font-bold font-mono">05. Color Aesthetic Mood</label>
+                      <div className="flex bg-stone-200 p-0.5 rounded-md">
+                        <button
+                          type="button"
+                          onClick={() => setColorSource("preset")}
+                          className={`text-[8.5px] uppercase tracking-wider px-2.5 py-1 rounded transition-all duration-150 ${
+                            colorSource === "preset" ? "bg-white text-stone-800 font-bold shadow-xs" : "text-stone-600 hover:text-stone-800"
+                          }`}
+                        >
+                          Presets
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setColorSource("moodboard")}
+                          className={`text-[8.5px] uppercase tracking-wider px-2.5 py-1 rounded transition-all duration-150 ${
+                            colorSource === "moodboard" ? "bg-white text-stone-800 font-bold shadow-xs" : "text-stone-600 hover:text-stone-800"
+                          }`}
+                        >
+                          Moodboard
+                        </button>
+                      </div>
+                    </div>
+
+                    {colorSource === "preset" ? (
+                      <div className="space-y-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[280px] overflow-y-auto pr-1">
+                          {PRESET_COLOR_SCHEMES.map((scheme) => {
+                            const isSelected = inputs.colorScheme === scheme.name;
+                            return (
+                              <button
+                                key={scheme.name}
+                                type="button"
+                                onClick={() => setInputs(prev => ({ ...prev, colorScheme: scheme.name }))}
+                                className={`flex gap-2 p-2 rounded-xl border text-left transition-all duration-200 relative group cursor-pointer ${
+                                  isSelected 
+                                    ? "border-[#C47A5C] bg-[#C47A5C]/5 shadow-3xs" 
+                                    : "border-stone-200 bg-white hover:border-[#C47A5C]/40 hover:bg-stone-50/50"
+                                }`}
+                              >
+                                <div className="w-11 h-11 shrink-0 rounded-lg overflow-hidden relative border border-stone-150 bg-stone-100">
+                                  <img
+                                    src={scheme.image}
+                                    alt={scheme.name}
+                                    className="w-full h-full object-cover transition duration-300 group-hover:scale-105"
+                                    referrerPolicy="no-referrer"
+                                  />
+                                </div>
+                                <div className="flex-1 min-w-0 flex flex-col justify-between">
+                                  <div>
+                                    <div className="flex items-center justify-between gap-1">
+                                      <span className={`text-[11px] font-bold truncate ${isSelected ? "text-[#C47A5C]" : "text-stone-700"}`}>
+                                        {scheme.name}
+                                      </span>
+                                      {isSelected ? (
+                                        <span className="w-1.5 h-1.5 rounded-full bg-[#C47A5C] shrink-0" />
+                                      ) : (
+                                        <span className="w-1.5 h-1.5 rounded-full border border-stone-300 shrink-0" />
+                                      )}
+                                    </div>
+                                    <p className="text-[9px] text-stone-500 leading-tight line-clamp-1 mt-0.5">
+                                      {scheme.desc}
+                                    </p>
+                                  </div>
+                                  <div className="flex items-center gap-1 mt-0.5">
+                                    <span className="w-3 h-1.5 rounded-xs border border-stone-200/85" style={{ backgroundColor: scheme.bg }} />
+                                    <span className="w-3 h-1.5 rounded-xs border border-stone-200/85" style={{ backgroundColor: scheme.text }} />
+                                  </div>
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {inputs.uploadedMoodBoardUrl ? (
+                          <div className="bg-white border border-stone-200/85 p-2 rounded-lg flex items-center justify-between gap-2 text-[11px]">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <img
+                                src={inputs.uploadedMoodBoardUrl}
+                                alt="Moodboard thumbnail"
+                                className="w-9 h-9 object-cover rounded border border-stone-200 shrink-0"
+                              />
+                              <div className="flex flex-col min-w-0">
+                                <span className="font-semibold text-stone-800 truncate max-w-[120px]">{inputs.uploadedMoodBoardName || "Moodboard file"}</span>
+                                <span className="text-[9px] text-[#5B6D5E]">Ready for extraction</span>
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setInputs(prev => ({ ...prev, colorScheme: "Japandi Classic", uploadedMoodBoardUrl: "", uploadedMoodBoardName: "" }))}
+                              className="text-red-500 hover:text-red-700 bg-red-50 p-1 rounded transition shrink-0"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ) : (
+                          <div 
+                            onDragOver={handleMoodboardDragOver}
+                            onDragLeave={handleMoodboardDragLeave}
+                            onDrop={handleMoodboardDrop}
+                            className={`border-2 border-dashed rounded-lg p-4 text-center transition-all duration-300 relative cursor-pointer ${
+                              isMoodboardDragging 
+                                ? "border-[#C47A5C] bg-amber-50/45 scale-[0.99]" 
+                                : "border-stone-300 bg-white hover:border-[#C47A5C] hover:bg-stone-50/40"
+                            }`}
+                          >
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  const reader = new FileReader();
+                                  reader.onloadend = () => {
+                                    setInputs(prev => ({
+                                      ...prev,
+                                      colorScheme: `Custom Moodboard [${file.name}]`,
+                                      uploadedMoodBoardUrl: reader.result as string,
+                                      uploadedMoodBoardName: file.name
+                                    }));
+                                  };
+                                  reader.readAsDataURL(file);
+                                }
+                              }}
+                              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                            />
+                            <Upload className="w-4 h-4 mx-auto mb-1 text-stone-400" />
+                            <span className="text-[11px] font-semibold text-stone-700 block">
+                              Upload mood board image
+                            </span>
+                            <span className="text-[9px] text-stone-400 block">Drag & drop image file</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => setInputsTab("notes")}
+                      className="w-full mt-1.5 text-[10px] font-mono tracking-wider uppercase py-2 bg-[#1C242B]/5 hover:bg-[#1C242B]/10 text-[#C47A5C] rounded-lg transition text-center font-bold flex items-center justify-center gap-1 cursor-pointer"
+                    >
+                      Next: Special notes & Contractor ➔
+                    </button>
+                  </div>
+                )}
+
+                {/* SUB-TAB 3: NOTES & BUILDER CONNECT */}
+                {inputsTab === "notes" && (
+                  <div className="space-y-3.5 animate-fadeIn">
+                    {/* 6. Other / Feng Shui Custom requirements */}
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[10px] uppercase tracking-widest text-[#6B6B6B] font-bold font-mono" htmlFor="preferences-textarea">06. Bespoke Spatial Notes</label>
+                      <textarea
+                        id="preferences-textarea"
+                        rows={2}
+                        value={inputs.otherPreferences}
+                        onChange={(e) => setInputs(prev => ({ ...prev, otherPreferences: e.target.value }))}
+                        placeholder="e.g. Master bed alignment, pet friendly paths, hidden carpentry..."
+                        className="w-full bg-stone-50 border border-stone-200 rounded-lg text-xs p-2 focus:outline-none focus:border-[#C47A5C] transition-all bg-white"
+                      />
+                    </div>
+
+                    {/* 7. Verified Builder Matchmaking */}
+                    <div className="flex flex-col gap-1.5 bg-[#FAF7F2] p-3 rounded-xl border border-stone-200/60">
+                      <div className="flex items-center gap-1">
+                        <Hammer className="w-3.5 h-3.5 text-[#C47A5C]" />
+                        <label className="text-[10px] uppercase tracking-widest text-[#1C242B] font-bold font-mono">07. Builder Connection</label>
+                      </div>
+                      <p className="text-[9px] text-stone-500 leading-normal">
+                        Skip renovation horror stories. Match directly with vetted CaseTrust Singapore builders.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setInputs(prev => ({ ...prev, wantContractorConnect: !prev.wantContractorConnect }))}
+                        className={`w-full text-left p-2 rounded-lg border transition-all flex items-start gap-2 cursor-pointer ${
+                          inputs.wantContractorConnect 
+                            ? "bg-[#1C242B] border-[#1C242B] text-white shadow-xs" 
+                            : "bg-white border-stone-200 text-stone-700 hover:border-[#C47A5C]/40"
+                        }`}
+                      >
+                        <div className={`w-3.5 h-3.5 rounded-md mt-0.5 border flex items-center justify-center shrink-0 ${
+                          inputs.wantContractorConnect 
+                            ? "bg-[#C47A5C] border-[#C47A5C] text-white" 
+                            : "bg-stone-50 border-stone-300 text-transparent"
+                        }`}>
+                          ✓
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-[10px] font-bold block">
+                            Connect Me with Vetted Builders
+                          </span>
+                          <span className={`text-[8.5px] block font-semibold ${
+                            inputs.wantContractorConnect ? "text-amber-200" : "text-[#C47A5C]"
+                          }`}>
+                            Compilation fee of $15 SGD
+                          </span>
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Action trigger button - ALWAYS VIEWABLE */}
+              <div className="pt-2 border-t border-stone-150">
+                <button
+                  type="button"
+                  onClick={handleGenerateProposal}
+                  disabled={isGenerating}
+                  className="w-full text-xs font-mono tracking-widest uppercase py-3 border-2 border-[#1C242B] bg-[#1C242B] hover:bg-[#C47A5C] hover:border-[#C47A5C] text-white rounded-xl transition duration-300 flex items-center justify-center gap-2 font-bold cursor-pointer disabled:opacity-50"
+                  id="generate-proposal-trigger"
+                >
+                  {isGenerating ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin text-white shrink-0" />
+                      Analyzing Blueprints...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-3.5 h-3.5 shrink-0" />
+                      Atelier AI Proposal Generator
+                    </>
+                  )}
+                </button>
+
+                <div className="text-[9px] text-center text-stone-400 flex items-center justify-center gap-1.5 uppercase tracking-wide mt-2">
+                  <ShieldCheck className="w-3.5 h-3.5 text-[#5B6D5E]" />
+                  Premium Singapore Studio Quality
+                </div>
               </div>
 
             </aside>
@@ -1294,191 +1441,237 @@ export default function App() {
                       </p>
                     </div>
 
-                    {/* TWO OPTION DYNAMIC SIDE-BY-SIDE ARCHITECTURAL VIEWPORT */}
-                    <div className="border border-stone-200 rounded-2xl p-5 bg-stone-50/50">
-                      <div className="flex items-center justify-between border-b border-stone-200 pb-3 mb-4">
-                        <div>
-                          <span className="text-[10px] uppercase font-mono tracking-widest text-[#C47A5C] font-bold">01. Interactive 2D Map Optimizer</span>
-                          <h5 className="text-sm font-semibold text-stone-800">Compare Dynamic Architectural Layout Strategies</h5>
-                        </div>
-                        <div className="flex bg-stone-200/60 p-1 rounded-lg border border-stone-300/30">
-                          <button
-                            type="button"
-                            onClick={() => setSelectedLayoutOption("optionA")}
-                            className={`text-xs px-2.5 py-1 rounded-md transition ${
-                              selectedLayoutOption === "optionA" ? "bg-white font-semibold text-[#1C242B]" : "text-stone-500 hover:text-stone-800"
-                            }`}
-                          >
-                            Option A
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setSelectedLayoutOption("optionB")}
-                            className={`text-xs px-2.5 py-1 rounded-md transition ${
-                              selectedLayoutOption === "optionB" ? "bg-white font-semibold text-[#1C242B]" : "text-stone-500 hover:text-stone-800"
-                            }`}
-                          >
-                            Option B
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Layout info display */}
-                      <div className="mb-4">
-                        <h6 className="text-sm font-serif font-bold text-[#1C242B]">
-                          {proposalResult.layouts?.[selectedLayoutOption]?.title}
-                        </h6>
-                        <p className="text-xs text-stone-600 mt-1 leading-relaxed">
-                          {proposalResult.layouts?.[selectedLayoutOption]?.description}
-                        </p>
-                      </div>
-
-                      {/* Interactive Visual SVG Grid map box */}
-                      <div className="relative bg-white aspect-square w-full max-w-md mx-auto border-2 border-stone-300 rounded-xl overflow-hidden shadow-xs flex items-center justify-center p-4">
-                        
-                        {/* Blueprint grid dots */}
-                        <div className="absolute inset-0 bg-grid-pattern opacity-10 pointer-events-none" style={{ backgroundImage: "radial-gradient(#1c242b 1px, transparent 1px)", backgroundSize: "16px 16px" }} />
-
-                        {/* Rooms container scaled */}
-                        <svg viewBox="0 0 100 100" className="w-full h-full relative z-10 font-sans">
-                          {/* Outer wall boundary outline */}
-                          <rect x="2" y="2" width="96" height="96" fill="none" stroke="#1C242B" strokeWidth="1.5" strokeDasharray="3 3" />
-                          <text x="6" y="93" className="text-[4px] fill-stone-400 uppercase font-mono tracking-widest font-semibold">Boundary Envelope</text>
-
-                          {proposalResult.layouts?.[selectedLayoutOption]?.rooms?.map((room, idx) => {
-                            const isHovered = hoveredRoom === room.name;
-                            return (
-                              <g 
-                                key={idx}
-                                onMouseEnter={() => setHoveredRoom(room.name)}
-                                onMouseLeave={() => setHoveredRoom(null)}
-                                className="cursor-help transition duration-150"
-                              >
-                                {/* Room shape fill-color maps dynamically */}
-                                <rect
-                                  x={room.x}
-                                  y={room.y}
-                                  width={room.w}
-                                  height={room.h}
-                                  rx="2"
-                                  className={`stroke-stone-800 stroke-[0.8] transition-colors ${room.color} ${isHovered ? "fill-amber-200/90" : ""}`}
-                                />
-                                <text
-                                  x={room.x + (room.w / 2)}
-                                  y={room.y + (room.h / 2)}
-                                  textAnchor="middle"
-                                  dominantBaseline="middle"
-                                  className={`fill-stone-800 font-medium font-sans pointer-events-none`}
-                                  style={{ fontSize: room.w < 20 ? "2.5px" : "4.5px" }}
-                                >
-                                  {room.name}
-                                </text>
-                              </g>
-                            );
-                          })}
-                        </svg>
-
-                        {/* Real-time room detail hover guide overlay banner */}
-                        <div className="absolute bottom-2 left-2 right-2 bg-[#1C242B]/90 backdrop-blur-xs text-white p-2.5 rounded-lg text-xs flex justify-between items-center">
-                          <div className="flex items-center gap-2">
-                            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                            <span>
-                              {hoveredRoom ? (
-                                <>Hovered space: <strong className="text-[#C47A5C]">{hoveredRoom}</strong></>
-                              ) : (
-                                "Hover layout blocks to view spatial metrics"
-                              )}
-                            </span>
-                          </div>
-                          <span className="text-[9px] uppercase font-mono bg-stone-800 px-1.5 py-0.5 rounded tracking-wide text-stone-200">Scale Grid Verified</span>
-                        </div>
-
-                      </div>
-
-                      {/* Pros & Cons List */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6 border-t border-stone-200 pt-4">
-                        <div>
-                          <span className="text-[10px] uppercase font-bold text-stone-400 tracking-wider">Option Advantages</span>
-                          <ul className="text-xs list-disc pl-4 mt-2 text-stone-700 space-y-1">
-                            {proposalResult.layouts?.[selectedLayoutOption]?.pros?.map((pro, index) => (
-                              <li key={index}>{pro}</li>
-                            ))}
-                          </ul>
-                        </div>
-                        <div>
-                          <span className="text-[10px] uppercase font-bold text-stone-400 tracking-wider">Atelier Trade-offs</span>
-                          <ul className="text-xs list-disc pl-4 mt-2 text-stone-700 space-y-1">
-                            {proposalResult.layouts?.[selectedLayoutOption]?.cons?.map((con, index) => (
-                              <li key={index} className="text-stone-500">{con}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      </div>
-
+                    {/* Interactive Sub-tab Selector for Proposal Results */}
+                    <div className="flex border-b border-stone-200 gap-1 sm:gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setResultsTab("map")}
+                        className={`flex-1 sm:flex-initial text-center py-2 px-3 text-[11px] font-mono uppercase tracking-wider font-bold border-b-2 transition-all -mb-px flex items-center justify-center gap-1.5 ${
+                          resultsTab === "map"
+                            ? "border-[#C47A5C] text-[#C47A5C]"
+                            : "border-transparent text-stone-400 hover:text-stone-700"
+                        }`}
+                      >
+                        <MapPin className="w-3.5 h-3.5" />
+                        Layout Map
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setResultsTab("budget")}
+                        className={`flex-1 sm:flex-initial text-center py-2 px-3 text-[11px] font-mono uppercase tracking-wider font-bold border-b-2 transition-all -mb-px flex items-center justify-center gap-1.5 ${
+                          resultsTab === "budget"
+                            ? "border-[#C47A5C] text-[#C47A5C]"
+                            : "border-transparent text-stone-400 hover:text-stone-700"
+                        }`}
+                      >
+                        <DollarSign className="w-3.5 h-3.5" />
+                        Finances
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setResultsTab("insights")}
+                        className={`flex-1 sm:flex-initial text-center py-2 px-3 text-[11px] font-mono uppercase tracking-wider font-bold border-b-2 transition-all -mb-px flex items-center justify-center gap-1.5 ${
+                          resultsTab === "insights"
+                            ? "border-[#C47A5C] text-[#C47A5C]"
+                            : "border-transparent text-stone-400 hover:text-stone-700"
+                        }`}
+                      >
+                        <Compass className="w-3.5 h-3.5" />
+                        Advice
+                      </button>
                     </div>
 
-                    {/* BUDGET FEASIBILITY & BREAKDOWN GRAPHICS */}
-                    <div className="border border-stone-200 rounded-2xl p-5 bg-stone-50/50">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-stone-200 pb-3 mb-4 gap-2">
-                        <div>
-                          <span className="text-[10px] uppercase font-mono tracking-widest text-[#C47A5C] font-bold">02. Investment Balance Matrix</span>
-                          <h5 className="text-sm font-semibold text-stone-800">Dynamic Capital Allocations</h5>
-                        </div>
-                        <span className="bg-[#FAF9F6] border border-stone-300 text-stone-800 text-xs px-2.5 py-1 rounded-full font-bold flex items-center gap-1.5 shrink-0 shadow-xs">
-                          <Layers className="w-3.5 h-3.5 text-[#C47A5C]" />
-                          Status: {proposalResult.budgetFeasibility?.status || "Balanced"}
-                        </span>
-                      </div>
-
-                      <p className="text-xs text-stone-600 mb-5 leading-relaxed bg-white border border-stone-200 rounded-xl p-3">
-                        {proposalResult.budgetFeasibility?.assessment}
-                      </p>
-
-                      {/* Allocation Bar Charts */}
-                      <span className="text-[10px] uppercase font-bold text-stone-400 tracking-wider block mb-3 leading-none">Financial Itemization & Projections:</span>
-                      
-                      <div className="space-y-3">
-                        {proposalResult.budgetFeasibility?.breakdown?.map((item, index) => (
-                          <div key={index} className="bg-white border border-stone-200 p-3 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
-                            <div className="flex-1 min-w-0">
-                              <div className="flex justify-between items-baseline mb-1">
-                                <span className="text-xs font-semibold text-stone-800 truncate">{item.item}</span>
-                                <span className="text-xs font-bold text-[#1C242B]" data-font="mono">
-                                  S$ {item.cost.toLocaleString("en-SG")} SGD ({item.percentage}%)
-                                </span>
-                              </div>
-                              <div className="w-full bg-stone-100 rounded-full h-1.5 overflow-hidden">
-                                <div 
-                                  className="h-1.5 rounded-full transition-all duration-300 ${index % 2 === 0 ? 'bg-[#C47A5C]' : 'bg-[#5B6D5E]'}"
-                                  style={{ 
-                                    width: `${item.percentage}%`,
-                                    backgroundColor: index % 2 === 0 ? "#C47A5C" : "#5B6D5E"
-                                  }}
-                                />
-                              </div>
+                    <div className="space-y-4">
+                      {/* VIEW_TAB 1: INTERACTIVE 2D FLOORPLAN MAP */}
+                      {resultsTab === "map" && (
+                        <div className="border border-stone-200 rounded-2xl p-5 bg-stone-50/50 animate-fadeIn space-y-4">
+                          <div className="flex items-center justify-between border-b border-stone-200 pb-3 mb-4">
+                            <div>
+                              <span className="text-[10px] uppercase font-mono tracking-widest text-[#C47A5C] font-bold">01. Interactive 2D Map Optimizer</span>
+                              <h5 className="text-sm font-semibold text-stone-800">Compare Dynamic Architectural Layout Strategies</h5>
+                            </div>
+                            <div className="flex bg-stone-200/60 p-1 rounded-lg border border-stone-300/30">
+                              <button
+                                type="button"
+                                onClick={() => setSelectedLayoutOption("optionA")}
+                                className={`text-xs px-2.5 py-1 rounded-md transition ${
+                                  selectedLayoutOption === "optionA" ? "bg-white font-semibold text-[#1C242B]" : "text-stone-500 hover:text-stone-800"
+                                }`}
+                              >
+                                Option A
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setSelectedLayoutOption("optionB")}
+                                className={`text-xs px-2.5 py-1 rounded-md transition ${
+                                  selectedLayoutOption === "optionB" ? "bg-white font-semibold text-[#1C242B]" : "text-stone-500 hover:text-stone-800"
+                                }`}
+                              >
+                                Option B
+                              </button>
                             </div>
                           </div>
-                        ))}
-                      </div>
-                    </div>
 
-                    {/* FENG SHUI & ECO RECOMMENDATIONS */}
-                    {proposalResult.recommendations?.map((rec, index) => (
-                      <div key={index} className="border border-stone-200 rounded-2xl p-5 bg-stone-50/50">
-                        <div className="flex items-center gap-2 border-b border-stone-200 pb-2 mb-3">
-                          <Compass className="w-4 h-4 text-[#C47A5C]" />
-                          <h5 className="text-xs uppercase font-mono tracking-widest text-[#C47A5C] font-bold">{rec.category} Advice</h5>
+                          {/* Layout info display */}
+                          <div className="mb-4">
+                            <h6 className="text-sm font-serif font-bold text-[#1C242B]">
+                              {proposalResult.layouts?.[selectedLayoutOption]?.title}
+                            </h6>
+                            <p className="text-xs text-stone-600 mt-1 leading-relaxed">
+                              {proposalResult.layouts?.[selectedLayoutOption]?.description}
+                            </p>
+                          </div>
+
+                          {/* Interactive Visual SVG Grid map box */}
+                          <div className="relative bg-white aspect-square w-full max-w-sm mx-auto border-2 border-stone-300 rounded-xl overflow-hidden shadow-xs flex items-center justify-center p-4">
+                            {/* Blueprint grid dots */}
+                            <div className="absolute inset-0 bg-grid-pattern opacity-10 pointer-events-none" style={{ backgroundImage: "radial-gradient(#1c242b 1px, transparent 1px)", backgroundSize: "16px 16px" }} />
+
+                            {/* Rooms container scaled */}
+                            <svg viewBox="0 0 100 100" className="w-full h-full relative z-10 font-sans">
+                              {/* Outer wall boundary outline */}
+                              <rect x="2" y="2" width="96" height="96" fill="none" stroke="#1C242B" strokeWidth="1.5" strokeDasharray="3 3" />
+                              <text x="6" y="93" className="text-[4px] fill-stone-400 uppercase font-mono tracking-widest font-semibold">Boundary Envelope</text>
+
+                              {proposalResult.layouts?.[selectedLayoutOption]?.rooms?.map((room, idx) => {
+                                const isHovered = hoveredRoom === room.name;
+                                return (
+                                  <g 
+                                    key={idx}
+                                    onMouseEnter={() => setHoveredRoom(room.name)}
+                                    onMouseLeave={() => setHoveredRoom(null)}
+                                    className="cursor-help transition duration-150"
+                                  >
+                                    {/* Room shape fill-color maps dynamically */}
+                                    <rect
+                                      x={room.x}
+                                      y={room.y}
+                                      width={room.w}
+                                      height={room.h}
+                                      rx="2"
+                                      className={`stroke-stone-800 stroke-[0.8] transition-colors ${room.color} ${isHovered ? "fill-amber-200/90" : ""}`}
+                                    />
+                                    <text
+                                      x={room.x + (room.w / 2)}
+                                      y={room.y + (room.h / 2)}
+                                      textAnchor="middle"
+                                      dominantBaseline="middle"
+                                      className={`fill-stone-800 font-medium font-sans pointer-events-none`}
+                                      style={{ fontSize: room.w < 20 ? "2.5px" : "4.5px" }}
+                                    >
+                                      {room.name}
+                                    </text>
+                                  </g>
+                                );
+                              })}
+                            </svg>
+
+                            {/* Real-time room detail hover guide overlay banner */}
+                            <div className="absolute bottom-2 left-2 right-2 bg-[#1C242B]/90 backdrop-blur-xs text-white p-2.5 rounded-lg text-xs flex justify-between items-center">
+                              <div className="flex items-center gap-2">
+                                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                                <span>
+                                  {hoveredRoom ? (
+                                    <>Hover: <strong className="text-[#C47A5C]">{hoveredRoom}</strong></>
+                                  ) : (
+                                    "Hover blocks to see info"
+                                  )}
+                                </span>
+                              </div>
+                              <span className="text-[8.5px] uppercase font-mono bg-stone-800 px-1.5 py-0.5 rounded tracking-wide text-stone-200">Grid verified</span>
+                            </div>
+                          </div>
+
+                          {/* Pros & Cons List */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 border-t border-stone-200 pt-4">
+                            <div>
+                              <span className="text-[10px] uppercase font-bold text-stone-400 tracking-wider">Option Advantages</span>
+                              <ul className="text-xs list-disc pl-4 mt-1.5 text-stone-700 space-y-1">
+                                {proposalResult.layouts?.[selectedLayoutOption]?.pros?.map((pro, index) => (
+                                  <li key={index}>{pro}</li>
+                                ))}
+                              </ul>
+                            </div>
+                            <div>
+                              <span className="text-[10px] uppercase font-bold text-stone-400 tracking-wider">Atelier Trade-offs</span>
+                              <ul className="text-xs list-disc pl-4 mt-1.5 text-stone-700 space-y-1">
+                                {proposalResult.layouts?.[selectedLayoutOption]?.cons?.map((con, index) => (
+                                  <li key={index} className="text-stone-500">{con}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          </div>
                         </div>
-                        <ul className="space-y-2.5">
-                          {rec.tips?.map((tip, idx) => (
-                            <li key={idx} className="text-xs text-stone-700 leading-relaxed flex items-start gap-2">
-                              <span className="w-1.5 h-1.5 rounded-full bg-[#1C242B] shrink-0 mt-2" />
-                              <span>{tip}</span>
-                            </li>
+                      )}
+
+                      {/* VIEW_TAB 2: BUDGET ALLOCATION & ANALYSIS */}
+                      {resultsTab === "budget" && (
+                        <div className="border border-stone-200 rounded-2xl p-5 bg-stone-50/50 animate-fadeIn space-y-4">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-stone-200 pb-3 mb-4 gap-2">
+                            <div>
+                              <span className="text-[10px] uppercase font-mono tracking-widest text-[#C47A5C] font-bold">02. Investment Balance Matrix</span>
+                              <h5 className="text-sm font-semibold text-stone-800">Dynamic Capital Allocations</h5>
+                            </div>
+                            <span className="bg-white border border-stone-300 text-stone-800 text-xs px-2.5 py-1 rounded-full font-bold flex items-center gap-1.5 shrink-0 shadow-xs">
+                              <Layers className="w-3.5 h-3.5 text-[#C47A5C]" />
+                              Status: {proposalResult.budgetFeasibility?.status || "Balanced"}
+                            </span>
+                          </div>
+
+                          <p className="text-xs text-stone-600 mb-4 leading-relaxed bg-white border border-stone-200 rounded-xl p-3">
+                            {proposalResult.budgetFeasibility?.assessment}
+                          </p>
+
+                          <span className="text-[10px] uppercase font-bold text-stone-400 tracking-wider block mb-2 leading-none">Financial Itemization & Projections:</span>
+                          
+                          <div className="space-y-2.5 max-h-[350px] overflow-y-auto pr-1">
+                            {proposalResult.budgetFeasibility?.breakdown?.map((item, index) => (
+                              <div key={index} className="bg-white border border-stone-200 p-3 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-xs">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex justify-between items-baseline mb-1">
+                                    <span className="text-xs font-semibold text-stone-800 truncate">{item.item}</span>
+                                    <span className="text-xs font-bold text-[#1C242B]" data-font="mono">
+                                      S$ {item.cost.toLocaleString("en-SG")} SGD ({item.percentage}%)
+                                    </span>
+                                  </div>
+                                  <div className="w-full bg-stone-100 rounded-full h-1.5 overflow-hidden">
+                                    <div 
+                                      className="h-1.5 rounded-full transition-all duration-300"
+                                      style={{ 
+                                        width: `${item.percentage}%`,
+                                        backgroundColor: index % 2 === 0 ? "#C47A5C" : "#5B6D5E"
+                                      }}
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* VIEW_TAB 3: BESPOKE RECOMMENDATIONS */}
+                      {resultsTab === "insights" && (
+                        <div className="animate-fadeIn space-y-3 max-h-[480px] overflow-y-auto pr-1">
+                          {proposalResult.recommendations?.map((rec, index) => (
+                            <div key={index} className="border border-stone-200 rounded-2xl p-5 bg-stone-50/50">
+                              <div className="flex items-center gap-2 border-b border-stone-200 pb-2 mb-3">
+                                <Compass className="w-4 h-4 text-[#C47A5C]" />
+                                <h5 className="text-xs uppercase font-mono tracking-widest text-[#C47A5C] font-bold">{rec.category} Advice</h5>
+                              </div>
+                              <ul className="space-y-2.5">
+                                {rec.tips?.map((tip, idx) => (
+                                  <li key={idx} className="text-xs text-stone-700 leading-relaxed flex items-start gap-2">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-[#1C242B] shrink-0 mt-2" />
+                                    <span>{tip}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
                           ))}
-                        </ul>
-                      </div>
-                    ))}
+                        </div>
+                      )}
+                    </div>
 
                     {/* CONTRACTOR MATCHMAKING OPT-IN & RESULTS AREA */}
                     <div className="border border-stone-200 rounded-2xl p-5 bg-[#FAF7F2] border-l-4 border-l-[#C47A5C] shadow-xs">
