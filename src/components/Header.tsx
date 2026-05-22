@@ -4,6 +4,8 @@ import { Home, Compass, Sparkles, User, LogOut, Receipt } from "lucide-react";
 interface HeaderProps {
   onGoHome: () => void;
   onShowPricing: () => void;
+  onShowHistory?: () => void;
+  activeTab?: string;
   userAccount: { name: string; email: string; plan: string } | null;
   onLogout: () => void;
   savedProposalsCount: number;
@@ -12,6 +14,8 @@ interface HeaderProps {
 export default function Header({
   onGoHome,
   onShowPricing,
+  onShowHistory,
+  activeTab,
   userAccount,
   onLogout,
   savedProposalsCount
@@ -46,11 +50,26 @@ export default function Header({
         {/* Global Nav links & Sessions */}
         <div className="flex items-center gap-3 sm:gap-6">
           <button 
+            type="button"
+            onClick={onShowHistory}
+            className={`text-xs sm:text-sm font-medium transition-colors duration-200 flex items-center gap-1.5 ${
+              activeTab === "history" ? "text-[#C47A5C] font-bold" : "text-stone-600 hover:text-[#C47A5C]"
+            }`}
+            id="nav-history-btn"
+          >
+            <Compass className="w-4 h-4 shrink-0" />
+            <span className="hidden xs:inline">Design Stream</span>
+            <span className="xs:hidden">Stream</span>
+          </button>
+
+          <button 
             onClick={onShowPricing}
-            className="text-xs sm:text-sm font-medium text-stone-600 hover:text-[#C47A5C] transition-colors duration-200 flex items-center gap-1.5"
+            className={`text-xs sm:text-sm font-medium transition-colors duration-200 flex items-center gap-1.5 ${
+              activeTab === "pricing" ? "text-[#C47A5C] font-semibold font-bold" : "text-stone-600 hover:text-[#C47A5C]"
+            }`}
             id="nav-pricing-btn"
           >
-            <Receipt className="w-4 h-4" />
+            <Receipt className="w-4 h-4 shrink-0" />
             Pricing
           </button>
 

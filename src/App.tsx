@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import Header from "./components/Header";
 import { RenovateInputs, RenovateProposal, PricingPlanTier } from "./types";
+import { supabase } from "./supabase";
 
 // Premade Floor Plan Templates for immediate instant testing
 const DEMO_FLOOR_PLANS = [
@@ -189,10 +190,7 @@ export default function App() {
 
   // Flow State
   const [isGenerating, setIsGenerating] = useState(false);
-  const [proposalResult, setProposalResult] = useState<RenovateProposal | null>(() => {
-    const saved = localStorage.getItem("workspace_last_proposal_sm");
-    return saved ? JSON.parse(saved) : null;
-  });
+  const [proposalResult, setProposalResult] = useState<RenovateProposal | null>(null);
   
   // Quick error messaging fallback
   const [errorMessage, setErrorMessage] = useState("");
@@ -202,20 +200,18 @@ export default function App() {
   const [hoveredRoom, setHoveredRoom] = useState<string | null>(null);
 
   // Design Refinement states
-  const [iterationCount, setIterationCount] = useState<number>(() => {
-    const saved = localStorage.getItem("workspace_iteration_count_sm");
-    return saved ? Number(saved) : 0;
-  });
+  const [iterationCount, setIterationCount] = useState<number>(0);
   const [refinementFeedback, setRefinementFeedback] = useState("");
-  const [feedbackHistory, setFeedbackHistory] = useState<string[]>(() => {
-    const saved = localStorage.getItem("workspace_feedback_history_sm");
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [feedbackHistory, setFeedbackHistory] = useState<string[]>([]);
   const [isRefining, setIsRefining] = useState(false);
   const [colorSource, setColorSource] = useState<"preset" | "moodboard">("preset");
   const [isMoodboardDragging, setIsMoodboardDragging] = useState(false);
 
-  // Sync state changes with client storage
+  // Real-time design stream state
+  const [entries, setEntries] = useState<any[]>([]);
+  const [isLoadingEntries, setIsLoadingEntries] = useState(false);
+
+  // Sync session authentication state with client storage
   useEffect(() => {
     if (userAccount) {
       localStorage.setItem("workspace_user_auth_sm", JSON.stringify(userAccount));
@@ -224,13 +220,69 @@ export default function App() {
     }
   }, [userAccount]);
 
+  // Fetch entries from Supabase + Subscribe to real-time additions
   useEffect(() => {
-    localStorage.setItem("workspace_iteration_count_sm", iterationCount.toString());
-  }, [iterationCount]);
+    let active = true;
 
-  useEffect(() => {
-    localStorage.setItem("workspace_feedback_history_sm", JSON.stringify(feedbackHistory));
-  }, [feedbackHistory]);
+    const fetchAllEntries = async () => {
+      setIsLoadingEntries(true);
+      try {
+        const { data, error } = await supabase
+          .from("entries")
+          .select("*")
+          .order("created_at", { ascending: false })
+          .limit(40);
+
+        if (error) {
+          console.error("Supabase select error:", error);
+        } else if (data && active) {
+          setEntries(data);
+          
+          // If we don't have an active proposalResult, load the absolute latest one from the stream!
+          // This keeps the workspace populated on first visit with the latest beautiful creation!
+          if (data.length > 0) {
+            const latest = data[0];
+            setProposalResult(latest.proposal);
+            setIterationCount(level => latest.iteration_count || level);
+            setFeedbackHistory(history => latest.feedback_history || history);
+            if (latest.inputs) {
+              setInputs(latest.inputs);
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Err fetching Supabase entries:", err);
+      } finally {
+        if (active) setIsLoadingEntries(false);
+      }
+    };
+
+    fetchAllEntries();
+
+    // Live subscription! Real-time channel with .channel().on()
+    const channel = supabase
+      .channel("live_entries")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "entries" },
+        (payload) => {
+          if (active) {
+            setEntries((prev) => {
+              // Ensure we don't push duplicates
+              const exists = prev.some((e) => e.id === payload.new.id);
+              if (exists) return prev;
+              return [payload.new, ...prev];
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      active = false;
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   // Close custom dropdown when clicking outside
   useEffect(() => {
@@ -442,11 +494,28 @@ export default function App() {
 
       const updatedProposal: RenovateProposal = await response.json();
       setProposalResult(updatedProposal);
-      localStorage.setItem("workspace_last_proposal_sm", JSON.stringify(updatedProposal));
       
-      setFeedbackHistory(prev => [...prev, refinementFeedback.trim()]);
+      const newHistoryList = [...feedbackHistory, refinementFeedback.trim()];
+      setFeedbackHistory(newHistoryList);
       setIterationCount(nextIteration);
       setRefinementFeedback("");
+
+      // Save design entry to Supabase table 'entries'
+      const entryData = {
+        user_email: userAccount?.email || "guest@renovatesmarter.com",
+        user_name: userAccount?.name || "Guest Designer",
+        inputs: inputs,
+        proposal: updatedProposal,
+        feedback_history: newHistoryList,
+        iteration_count: nextIteration,
+        created_at: new Date().toISOString()
+      };
+
+      try {
+        await supabase.from("entries").insert([entryData]);
+      } catch (err) {
+        console.error("Failed to save refined iteration to Supabase:", err);
+      }
 
       // Scroll to proposal theme name immediately
       setTimeout(() => {
@@ -518,14 +587,33 @@ export default function App() {
       const proposalData: RenovateProposal = await response.json();
       setProposalResult(proposalData);
       
-      // Persist client state copy
-      localStorage.setItem("workspace_last_proposal_sm", JSON.stringify(proposalData));
-      
       // Increment recommendation usage
       setUserAccount(prev => prev ? {
         ...prev,
         recommendationsCount: prev.recommendationsCount + 1
       } : null);
+
+      // Save design entry to Supabase table 'entries'
+      const generatedInputs = {
+        ...inputs,
+        roomsSelected: inputs.scope === "whole" ? ["Living", "Kitchen", "Bedrooms", "Foyer"] : inputs.roomsSelected
+      };
+
+      const entryData = {
+        user_email: userAccount?.email || "guest@renovatesmarter.com",
+        user_name: userAccount?.name || "Guest Designer",
+        inputs: generatedInputs,
+        proposal: proposalData,
+        feedback_history: [],
+        iteration_count: 0,
+        created_at: new Date().toISOString()
+      };
+
+      try {
+        await supabase.from("entries").insert([entryData]);
+      } catch (err) {
+        console.error("Failed to save new proposal to Supabase:", err);
+      }
 
       // Scroll smoothly down to the proposal content container
       setTimeout(() => {
@@ -561,7 +649,6 @@ export default function App() {
     setIterationCount(0);
     setFeedbackHistory([]);
     setRefinementFeedback("");
-    localStorage.removeItem("workspace_last_proposal_sm");
   };
 
   // Filter Singapore towns dynamically based on the dropdown search query
@@ -578,6 +665,8 @@ export default function App() {
       <Header
         onGoHome={() => setActiveTab("planner")}
         onShowPricing={() => setActiveTab("pricing")}
+        onShowHistory={() => setActiveTab("history")}
+        activeTab={activeTab}
         userAccount={userAccount}
         onLogout={handleLogout}
         savedProposalsCount={userAccount ? userAccount.recommendationsCount : 0}
@@ -1600,6 +1689,175 @@ export default function App() {
 
           </div>
         </main>
+      )}
+
+      {/* Real-time Design Stream (History) */}
+      {activeTab === "history" && (
+        <section className="flex-1 w-full max-w-7xl mx-auto px-4 py-8 sm:py-12 md:px-6">
+          <div className="text-center max-w-2xl mx-auto mb-10">
+            <span className="text-[11px] uppercase tracking-[0.25em] font-mono text-[#C47A5C] font-bold block mb-1">
+              • LIVE STUDIO STREAMS •
+            </span>
+            <h2 className="text-3xl font-serif text-[#1C242B] tracking-tight">
+              Community Space Blueprints
+            </h2>
+            <p className="text-xs text-stone-500 mt-2 leading-relaxed font-light">
+              A public stream of generated spatial layout concepts. Sponsored by our Singapore Atelier, synchronized across users in high-performance real-time using <strong className="text-stone-700">Supabase Postgres</strong>.
+            </p>
+          </div>
+
+          {isLoadingEntries && entries.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 bg-white border border-stone-200/60 rounded-3xl p-6 text-center">
+              <RefreshCw className="w-8 h-8 text-[#C47A5C] animate-spin mb-3" />
+              <p className="text-xs text-stone-500 font-medium font-mono">RETRIEVING POSTGRES SPATIAL SPECIFICATIONS...</p>
+            </div>
+          ) : entries.length === 0 ? (
+            <div className="text-center py-16 bg-white border border-stone-200 rounded-3xl p-8 max-w-lg mx-auto shadow-sm">
+              <Sparkles className="w-8 h-8 text-stone-300 mx-auto mb-3" />
+              <p className="text-xs text-stone-700 font-semibold mb-1">No Active Blueprints Yet</p>
+              <p className="text-[11px] text-stone-400 font-light leading-normal mb-4">
+                Be the very first designer to generate a layout concept and publish it to the real-time Supabase network!
+              </p>
+              <button
+                type="button"
+                onClick={() => setActiveTab("planner")}
+                className="px-4 py-2 bg-[#1C242B] text-white text-xs font-mono uppercase tracking-wider font-bold rounded-xl hover:bg-[#C47A5C] transition cursor-pointer"
+              >
+                Launch Planner
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {entries.map((entry, idx) => {
+                const colors = entry.proposal?.palette?.colors || [];
+                const summary = entry.proposal?.overallSummary || "Modern compact renovation";
+                const themeName = entry.proposal?.themeName || "Unknown Style Theme";
+                const dateText = entry.created_at ? new Date(entry.created_at).toLocaleTimeString("en-SG", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  second: "2-digit"
+                }) : "Just now";
+
+                return (
+                  <div 
+                    key={entry.id || idx}
+                    className="bg-white border border-stone-200 hover:border-[#C47A5C] rounded-2xl p-5 shadow-xs transition-all duration-300 hover:shadow-md flex flex-col justify-between relative group overflow-hidden"
+                  >
+                    {/* Visual bar matching first color of palette */}
+                    <div 
+                      className="absolute left-0 top-0 bottom-0 w-1.5 transition-colors duration-300"
+                      style={{ backgroundColor: colors[0]?.hex || "#C47A5C" }}
+                    />
+
+                    <div>
+                      {/* Avatar header */}
+                      <div className="flex items-center justify-between border-b border-stone-100 pb-3 mb-3 pl-2">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-7 h-7 rounded-lg bg-[#1C242B] text-white text-xs font-bold font-mono flex items-center justify-center shrink-0 shadow-2xs">
+                            {(entry.user_name || "G")[0].toUpperCase()}
+                          </div>
+                          <div className="min-w-0">
+                            <span className="text-xs font-semibold text-stone-800 block truncate leading-tight">
+                              {entry.user_name || "Guest Designer"}
+                            </span>
+                            <span className="text-[9px] text-[#C47A5C] tracking-wide block truncate">
+                              {entry.user_email || "guest@renovatesmarter.com"}
+                            </span>
+                          </div>
+                        </div>
+                        <span className="text-[9px] font-mono text-stone-400 bg-stone-50 border border-stone-150 px-2 py-0.5 rounded-md flex items-center gap-1 shrink-0">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                          {dateText}
+                        </span>
+                      </div>
+
+                      <div className="pl-2 space-y-3">
+                        {/* Blueprint Metadata Row */}
+                        <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-stone-600 font-sans">
+                          <span className="flex items-center gap-1">
+                            <MapPin className="w-3 h-3 text-[#C47A5C]" />
+                            <strong>{entry.inputs?.location || "Singapore"}</strong>
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Home className="w-3 h-3 text-[#C47A5C]" />
+                            {entry.inputs?.housingType || "HDB"}
+                          </span>
+                          <span className="flex items-center gap-1 text-[#5B6D5E] font-medium">
+                            <DollarSign className="w-3 h-3 text-[#5B6D5E]" />
+                            S$ {entry.inputs?.budget?.toLocaleString("en-SG") || "35,000"} SGD
+                          </span>
+                        </div>
+
+                        {/* Proposal Theme Card */}
+                        <div className="bg-[#FAF7F2] border border-stone-150 rounded-xl p-3.5 mt-2">
+                          <span className="text-[9px] font-mono uppercase bg-stone-200/50 text-[#1C242B] px-1.5 py-0.5 rounded font-bold">
+                            {themeName}
+                          </span>
+                          <p className="text-[11px] text-stone-700 italic mt-2 leading-relaxed font-serif">
+                            &ldquo;{summary}&rdquo;
+                          </p>
+
+                          {/* Color strip */}
+                          {colors.length > 0 && (
+                            <div className="flex items-center gap-1.5 mt-3 pt-2.5 border-t border-stone-200/40">
+                              <span className="text-[9px] font-mono font-bold text-[#C47A5C] mr-1 uppercase">Aesthetic:</span>
+                              {colors.map((c: any, i: number) => (
+                                <div 
+                                  key={i} 
+                                  className="w-4 h-4 rounded-full border border-stone-200 cursor-help transition hover:scale-110 shrink-0 shadow-2xs"
+                                  style={{ backgroundColor: c.hex || "#FFF" }}
+                                  title={`${c.name || "Color"} (${c.hex})`}
+                                />
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Feedback count and iterative stage indicator */}
+                        {entry.iteration_count > 0 && (
+                          <div className="flex items-center gap-1.5 text-[10px] text-amber-800 bg-amber-50 border border-amber-100 px-2.5 py-1.5 rounded-lg font-mono">
+                            <RefreshCw className="w-3 h-3 text-amber-700 animate-spin shrink-0" style={{ animationDuration: "12s" }} />
+                            <span>Successfully refined over <strong>{entry.iteration_count}</strong> customized iteration cycles</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="pl-2 mt-5 pt-3 border-t border-stone-100 flex items-center justify-between gap-3">
+                      <span className="text-[10px] text-stone-400 font-mono italic">
+                        {entry.inputs?.scope === "whole" ? "Whole House Scope" : `Focus: ${entry.inputs?.roomsSelected?.slice(0, 2).join(", ")}`}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (entry.inputs) {
+                            setInputs(entry.inputs);
+                          }
+                          if (entry.proposal) {
+                            setProposalResult(entry.proposal);
+                          }
+                          setFeedbackHistory(entry.feedback_history || []);
+                          setIterationCount(entry.iteration_count || 0);
+                          setActiveTab("planner");
+                          
+                          // Scroll down to the proposal content container smoothly
+                          setTimeout(() => {
+                            document.getElementById("proposal-concept-box")?.scrollIntoView({ behavior: "smooth" });
+                          }, 150);
+                        }}
+                        className="text-[10px] font-mono font-bold uppercase tracking-widest bg-[#1C242B] text-[#FAF9F6] px-3.5 py-2 rounded-xl border border-[#1C242B] hover:bg-[#C47A5C] hover:border-[#C47A5C] transition duration-300 cursor-pointer flex items-center gap-1.5 shadow-2xs group-hover:bg-[#C47A5C] group-hover:border-[#C47A5C]"
+                      >
+                        <Sparkles className="w-3.5 h-3.5 shrink-0" />
+                        Load to Workbench
+                      </button>
+                    </div>
+
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
       )}
 
       {/* Pricing Page screen views */}
