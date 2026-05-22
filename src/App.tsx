@@ -3,7 +3,7 @@ import {
   Home, Sparkles, AlertCircle, CheckCircle, Upload, HelpCircle, 
   ArrowRight, ShieldCheck, RefreshCw, Layers, MapPin, DollarSign, 
   Compass, Eye, Heart, ListPlus, CreditCard, ChevronRight, X,
-  History
+  History, ChevronDown, Search
 } from "lucide-react";
 import Header from "./components/Header";
 import { RenovateInputs, RenovateProposal, PricingPlanTier } from "./types";
@@ -13,19 +13,19 @@ const DEMO_FLOOR_PLANS = [
   {
     id: "hdb-3bed",
     name: "Standard 3-Bedroom Flat Layout",
-    url: "https://images.unsplash.com/photo-1545464693-f1798a373343?auto=format&fit=crop&q=80&w=400",
+    url: "https://images.weserv.nl/?url=https://commons.wikimedia.org/wiki/Special:FilePath/Block_142_HDB_Potong_Pasir.jpg",
     desc: "Typical 90sqm modular space grid with dual balconies."
   },
   {
     id: "condo-loft",
     name: "Compact Condo Studio Loft",
-    url: "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&q=80&w=400",
+    url: "https://images.weserv.nl/?url=https://commons.wikimedia.org/wiki/Special:FilePath/Heritage_View,_Singapore_-_20130317.jpg",
     desc: "Double-height vertical volume with high natural breeze access."
   },
   {
     id: "landed-multi",
     name: "Multi-Storey Landed Terrace",
-    url: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=400",
+    url: "https://images.weserv.nl/?url=https://commons.wikimedia.org/wiki/Special:FilePath/Houses_on_Victoria_Park_Grove_in_Leedon_Park.jpg",
     desc: "Expansive linear configuration emphasizing spatial transitions."
   }
 ];
@@ -37,6 +37,49 @@ const PRESET_COLOR_SCHEMES = [
   { name: "Terracotta Earth", bg: "#F8ECE6", text: "#783B25", desc: "Baked clay bricks, soft sand, and natural rattan elements." },
   { name: "Celestial Dusk", bg: "#EFF2F7", text: "#1A2536", desc: "Atmospheric twilight blue blended with warm zinc and steel." }
 ];
+
+const SINGAPORE_TOWNS: Record<string, string[]> = {
+  "Central Region": [
+    "Ang Mo Kio",
+    "Bishan",
+    "Bukit Merah",
+    "Bukit Timah",
+    "Geylang",
+    "Kallang/Whampoa",
+    "Marine Parade",
+    "Novena",
+    "Outram",
+    "Queenstown",
+    "Toa Payoh"
+  ],
+  "North-East Region": [
+    "Hougang",
+    "Punggol",
+    "Sengkang",
+    "Serangoon"
+  ],
+  "North Region": [
+    "Lim Chu Kang",
+    "Sembawang",
+    "Woodlands",
+    "Yishun"
+  ],
+  "East Region": [
+    "Bedok",
+    "Changi",
+    "Pasir Ris",
+    "Tampines"
+  ],
+  "West Region": [
+    "Bukit Batok",
+    "Bukit Panjang",
+    "Choa Chu Kang",
+    "Clementi",
+    "Jurong East",
+    "Jurong West",
+    "Tengah"
+  ]
+};
 
 export default function App() {
   // Application Tiers and pricing details
@@ -119,10 +162,14 @@ export default function App() {
   const [cardHolderName, setCardHolderName] = useState("");
   const [cardNumber, setCardNumber] = useState("");
 
+  // Geographic Context Custom Dropdown state
+  const [isLocationDropdownOpen, setIsLocationDropdownOpen] = useState(false);
+  const [locationSearchQuery, setLocationSearchQuery] = useState("");
+
   // Input states for the Renovator Builder
   const [inputs, setInputs] = useState<RenovateInputs>({
     housingType: "HDB / Apartment",
-    location: "Sengkang Central, Singapore",
+    location: "Sengkang",
     budget: 45000,
     scope: "rooms",
     roomsSelected: ["Living Room", "Kitchen"],
@@ -178,6 +225,19 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem("workspace_feedback_history_sm", JSON.stringify(feedbackHistory));
   }, [feedbackHistory]);
+
+  // Close custom dropdown when clicking outside
+  useEffect(() => {
+    if (!isLocationDropdownOpen) return;
+    const handleOutsideClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest("#location-dropdown-wrapper")) {
+        setIsLocationDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, [isLocationDropdownOpen]);
 
   // Handle preset room selections toggle (multi-select)
   const toggleRoomSelection = (room: string) => {
@@ -450,7 +510,7 @@ export default function App() {
   const handleResetForm = () => {
     setInputs({
       housingType: "HDB / Apartment",
-      location: "Singapore",
+      location: "Sengkang",
       budget: 50000,
       scope: "whole",
       roomsSelected: [],
@@ -468,6 +528,15 @@ export default function App() {
     setRefinementFeedback("");
     localStorage.removeItem("workspace_last_proposal_sm");
   };
+
+  // Filter Singapore towns dynamically based on the dropdown search query
+  const filteredTowns = Object.entries(SINGAPORE_TOWNS).reduce((acc, [region, towns]) => {
+    const matched = towns.filter(town => town.toLowerCase().includes(locationSearchQuery.toLowerCase()));
+    if (matched.length > 0) {
+      acc[region] = matched;
+    }
+    return acc;
+  }, {} as Record<string, string[]>);
 
   return (
     <div className="min-h-screen bg-[#FAF7F2] text-[#1A1A1A] flex flex-col antialiased">
@@ -608,18 +677,92 @@ export default function App() {
               </div>
 
               {/* 2. Geographic Context Location */}
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-2" id="location-dropdown-wrapper">
                 <label className="text-xs uppercase tracking-widest text-[#6B6B6B] font-bold font-mono" htmlFor="location-input">02. Geographic Context</label>
                 <div className="relative">
-                  <MapPin className="w-4 h-4 text-stone-400 absolute left-3 top-3.5" />
-                  <input
+                  <MapPin className="w-4 h-4 text-stone-400 absolute left-3 top-3.5 z-10 pointer-events-none" />
+                  <button
                     id="location-input"
-                    type="text"
-                    placeholder="Enter district or county (e.g., Bukit Timah, SG)"
-                    value={inputs.location}
-                    onChange={(e) => setInputs(prev => ({ ...prev, location: e.target.value }))}
-                    className="w-full pl-9 pr-4 py-2.5 text-sm bg-stone-50 border-b border-stone-300 focus:outline-none focus:border-[#1C242B] transition-all"
-                  />
+                    type="button"
+                    onClick={() => {
+                      setIsLocationDropdownOpen(!isLocationDropdownOpen);
+                      setLocationSearchQuery("");
+                    }}
+                    className="w-full pl-9 pr-10 py-2.5 text-left text-sm bg-stone-50 border-b border-stone-300 focus:outline-none focus:border-[#1C242B] hover:bg-stone-100/50 transition-all flex items-center justify-between cursor-pointer"
+                  >
+                    <span className="text-stone-800 font-medium">
+                      {inputs.location || "Select town / precinct"}
+                    </span>
+                    <ChevronDown className={`w-4 h-4 text-stone-400 transition-transform duration-200 ${isLocationDropdownOpen ? "rotate-180" : ""}`} />
+                  </button>
+
+                  {isLocationDropdownOpen && (
+                    <div className="absolute z-50 left-0 right-0 mt-1 bg-white border border-stone-200 shadow-xl rounded-xl overflow-hidden max-h-80 flex flex-col transition-all">
+                      {/* Search Bar */}
+                      <div className="p-2 border-b border-stone-100 flex items-center gap-2 bg-stone-50/50">
+                        <Search className="w-3.5 h-3.5 text-stone-400 shrink-0" />
+                        <input
+                          type="text"
+                          placeholder="Search town or region..."
+                          value={locationSearchQuery}
+                          onChange={(e) => setLocationSearchQuery(e.target.value)}
+                          className="w-full bg-transparent text-xs text-stone-800 outline-none focus:ring-0 py-1"
+                          autoFocus
+                        />
+                        {locationSearchQuery && (
+                          <button
+                            type="button"
+                            onClick={() => setLocationSearchQuery("")}
+                            className="text-stone-400 hover:text-stone-600 p-0.5"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Dropdown Options */}
+                      <div className="overflow-y-auto py-1 flex-1 max-h-60 scrollbar-thin">
+                        {Object.keys(filteredTowns).length === 0 ? (
+                          <div className="px-4 py-3 text-xs text-stone-400 text-center uppercase tracking-wider">
+                            No matching towns found
+                          </div>
+                        ) : (
+                          Object.entries(filteredTowns).map(([region, towns]) => (
+                            <div key={region} className="mb-2">
+                              {/* Region Header */}
+                              <div className="px-3 py-1 text-[10px] uppercase font-mono font-bold tracking-widest text-stone-400 bg-[#FAF9F6]">
+                                {region}
+                              </div>
+                              {/* Towns under Region */}
+                              <div className="space-y-0.5 mt-1">
+                                {towns.map((town) => {
+                                  const isSelected = inputs.location === town;
+                                  return (
+                                    <button
+                                      key={town}
+                                      type="button"
+                                      onClick={() => {
+                                        setInputs(prev => ({ ...prev, location: town }));
+                                        setIsLocationDropdownOpen(false);
+                                      }}
+                                      className={`w-full px-4 py-2 text-left text-xs transition-colors flex items-center justify-between ${
+                                        isSelected
+                                          ? "bg-[#1C242B] text-white font-medium"
+                                          : "text-stone-700 hover:bg-stone-50 hover:text-stone-900"
+                                      }`}
+                                    >
+                                      <span>{town}</span>
+                                      {isSelected && <CheckCircle className="w-3.5 h-3.5 text-orange-400" />}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
