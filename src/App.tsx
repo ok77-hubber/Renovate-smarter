@@ -1955,7 +1955,7 @@ export default function App() {
             </div>
             <div className="flex items-center gap-2 bg-white border border-stone-150 rounded-xl px-3 py-1.5 text-[10px] font-mono text-stone-600 shrink-0 self-start md:self-center">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-              <span>Social Channel Active • 繁中/EN Support</span>
+              <span>Social Channel Active • English Support</span>
             </div>
           </div>
 

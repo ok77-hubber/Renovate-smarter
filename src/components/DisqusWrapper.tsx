@@ -43,7 +43,7 @@ export default function DisqusWrapper({ proposalThemeName }: DisqusWrapperProps)
       this.page.url = pageUrl;
       this.page.identifier = disqusIdentifier;
       this.page.title = disqusTitle;
-      this.language = "zh_TW";
+      this.language = "en";
     };
 
     // If DISQUS instance already exists, trigger its hot reset
@@ -55,7 +55,7 @@ export default function DisqusWrapper({ proposalThemeName }: DisqusWrapperProps)
             this.page.url = pageUrl;
             this.page.identifier = disqusIdentifier;
             this.page.title = disqusTitle;
-            this.language = "zh_TW";
+            this.language = "en";
           }
         });
       } catch (err: any) {
