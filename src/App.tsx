@@ -901,17 +901,17 @@ export default function App() {
                 <input
                   id="budget-input"
                   type="range"
-                  min="15000"
-                  max="250000"
-                  step="5000"
+                  min="2000"
+                  max="1000000"
+                  step="1000"
                   value={inputs.budget}
                   onChange={(e) => setInputs(prev => ({ ...prev, budget: Number(e.target.value) }))}
                   className="w-full h-1 cursor-pointer"
                 />
                 <div className="flex justify-between text-[10px] text-stone-400 font-mono mt-1">
-                  <span>Min: S$ 15,000</span>
-                  <span>Mid: S$ 132,500</span>
-                  <span>Max: S$ 250,000+</span>
+                  <span>Min: S$ 2,000</span>
+                  <span>Mid: S$ 501,000</span>
+                  <span>Max: S$ 1,000,000</span>
                 </div>
               </div>
 
