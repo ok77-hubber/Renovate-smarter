@@ -8,7 +8,7 @@ import {
 import Header from "./components/Header";
 import { RenovateInputs, RenovateProposal, PricingPlanTier } from "./types";
 import { supabase } from "./supabase";
-import { DiscussionEmbed } from "disqus-react";
+import DisqusWrapper from "./components/DisqusWrapper";
 
 // Premade Floor Plan Templates for immediate instant testing
 const DEMO_FLOOR_PLANS = [
@@ -1960,15 +1960,7 @@ export default function App() {
           </div>
 
           <div className="bg-white rounded-2xl p-4 sm:p-6 border border-stone-150 shadow-2xs">
-            <DiscussionEmbed
-              shortname="renovate-smarter"
-              config={{
-                url: typeof window !== "undefined" ? window.location.href : "https://renovate-smarter.example.com",
-                identifier: proposalResult?.themeName ? `renovate-smarter-proposal-${proposalResult.themeName.toLowerCase().replace(/\s+/g, "-")}` : "renovate-smarter-forum-root",
-                title: proposalResult?.themeName || "Studio Atelier AI Renovate Smarter Community Hub",
-                language: "zh_TW"
-              }}
-            />
+            <DisqusWrapper proposalThemeName={proposalResult?.themeName} />
           </div>
         </div>
       </section>
