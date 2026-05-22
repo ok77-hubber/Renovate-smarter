@@ -62,6 +62,7 @@ export interface RenovateInputs {
   uploadedMoodBoardUrl?: string;
   uploadedMoodBoardName?: string;
   pricingPlan: string; // 'free' | 'basic_10' | 'pro_30'
+  wantContractorConnect?: boolean;
 }
 
 export interface PricingPlanTier {

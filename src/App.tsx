@@ -3,7 +3,7 @@ import {
   Home, Sparkles, AlertCircle, CheckCircle, Upload, HelpCircle, 
   ArrowRight, ShieldCheck, RefreshCw, Layers, MapPin, DollarSign, 
   Compass, Eye, Heart, ListPlus, CreditCard, ChevronRight, X,
-  History, ChevronDown, Search
+  History, ChevronDown, Search, Hammer, Briefcase
 } from "lucide-react";
 import Header from "./components/Header";
 import { RenovateInputs, RenovateProposal, PricingPlanTier } from "./types";
@@ -162,6 +162,10 @@ export default function App() {
   const [cardHolderName, setCardHolderName] = useState("");
   const [cardNumber, setCardNumber] = useState("");
 
+  // Contractor matching state
+  const [contractorModalOpen, setContractorModalOpen] = useState(false);
+  const [isContractorCheckedOut, setIsContractorCheckedOut] = useState(false);
+
   // Geographic Context Custom Dropdown state
   const [isLocationDropdownOpen, setIsLocationDropdownOpen] = useState(false);
   const [locationSearchQuery, setLocationSearchQuery] = useState("");
@@ -179,7 +183,8 @@ export default function App() {
     uploadedPlanName: "",
     uploadedMoodBoardUrl: "",
     uploadedMoodBoardName: "",
-    pricingPlan: "free"
+    pricingPlan: "free",
+    wantContractorConnect: false
   });
 
   // Flow State
@@ -208,6 +213,7 @@ export default function App() {
   });
   const [isRefining, setIsRefining] = useState(false);
   const [colorSource, setColorSource] = useState<"preset" | "moodboard">("preset");
+  const [isMoodboardDragging, setIsMoodboardDragging] = useState(false);
 
   // Sync state changes with client storage
   useEffect(() => {
@@ -285,6 +291,34 @@ export default function App() {
           ...prev,
           uploadedPlanUrl: reader.result as string,
           uploadedPlanName: file.name
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleMoodboardDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsMoodboardDragging(true);
+  };
+
+  const handleMoodboardDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsMoodboardDragging(false);
+  };
+
+  const handleMoodboardDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsMoodboardDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file && file.type.startsWith("image/")) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setInputs(prev => ({
+          ...prev,
+          colorScheme: `Custom Moodboard [${file.name}]`,
+          uploadedMoodBoardUrl: reader.result as string,
+          uploadedMoodBoardName: file.name
         }));
       };
       reader.readAsDataURL(file);
@@ -520,7 +554,8 @@ export default function App() {
       uploadedPlanName: "",
       uploadedMoodBoardUrl: "",
       uploadedMoodBoardName: "",
-      pricingPlan: "free"
+      pricingPlan: "free",
+      wantContractorConnect: false
     });
     setProposalResult(null);
     setIterationCount(0);
@@ -842,12 +877,12 @@ export default function App() {
               <div className="flex flex-col gap-2 bg-stone-50/40 p-4 rounded-xl border border-stone-200/50">
                 <div className="flex items-center justify-between border-b border-stone-150 pb-2 mb-2">
                   <label className="text-xs uppercase tracking-widest text-[#6B6B6B] font-bold font-mono">05. Color Aesthetic Mood</label>
-                  <div className="flex bg-stone-200/60 p-0.5 rounded-md">
+                  <div className="flex bg-stone-200 p-0.5 rounded-md">
                     <button
                       type="button"
                       onClick={() => setColorSource("preset")}
-                      className={`text-[9px] uppercase tracking-wider px-2 py-1 rounded transition ${
-                        colorSource === "preset" ? "bg-white text-stone-800 font-bold" : "text-stone-50"
+                      className={`text-[9px] uppercase tracking-wider px-2.5 py-1 rounded transition-all duration-150 ${
+                        colorSource === "preset" ? "bg-white text-stone-800 font-bold shadow-xs" : "text-stone-600 hover:text-stone-800"
                       }`}
                     >
                       Presets
@@ -855,8 +890,8 @@ export default function App() {
                     <button
                       type="button"
                       onClick={() => setColorSource("moodboard")}
-                      className={`text-[9px] uppercase tracking-wider px-2 py-1 rounded transition ${
-                        colorSource === "moodboard" ? "bg-white text-stone-800 font-bold" : "text-stone-50 animate-pulse"
+                      className={`text-[9px] uppercase tracking-wider px-2.5 py-1 rounded transition-all duration-150 ${
+                        colorSource === "moodboard" ? "bg-white text-stone-800 font-bold shadow-xs" : "text-stone-600 hover:text-stone-800 font-semibold"
                       }`}
                     >
                       Mood Board
@@ -896,20 +931,33 @@ export default function App() {
                           <img
                             src={inputs.uploadedMoodBoardUrl}
                             alt="Moodboard thumbnail"
-                            className="w-8 h-8 object-cover rounded border border-stone-200"
+                            className="w-10 h-10 object-cover rounded border border-stone-200"
                           />
-                          <span className="font-semibold text-stone-700 truncate max-w-[125px]">{inputs.uploadedMoodBoardName || "Moodboard file"}</span>
+                          <div className="flex flex-col min-w-0">
+                            <span className="font-semibold text-stone-800 truncate max-w-[130px]">{inputs.uploadedMoodBoardName || "Moodboard file"}</span>
+                            <span className="text-[10px] text-[#5B6D5E]">Ready for custom AI extraction</span>
+                          </div>
                         </div>
                         <button
+                          type="button"
                           onClick={() => setInputs(prev => ({ ...prev, colorScheme: "Japandi Classic", uploadedMoodBoardUrl: "", uploadedMoodBoardName: "" }))}
-                          className="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-1.5 rounded"
+                          className="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-1.5 rounded transition"
                           title="Remove custom scheme"
                         >
                           <X className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     ) : (
-                      <div className="border border-dashed border-stone-300 rounded-lg p-3.5 text-center hover:border-[#C47A5C] bg-white transition relative cursor-pointer">
+                      <div 
+                        onDragOver={handleMoodboardDragOver}
+                        onDragLeave={handleMoodboardDragLeave}
+                        onDrop={handleMoodboardDrop}
+                        className={`border-2 border-dashed rounded-lg p-5 text-center transition-all duration-300 relative cursor-pointer ${
+                          isMoodboardDragging 
+                            ? "border-[#C47A5C] bg-amber-50/40 scale-[0.99]" 
+                            : "border-stone-300 bg-white hover:border-[#C47A5C] hover:bg-stone-50/40"
+                        }`}
+                      >
                         <input
                           type="file"
                           accept="image/*"
@@ -930,9 +978,11 @@ export default function App() {
                           }}
                           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                         />
-                        <Upload className="w-5 h-5 text-stone-400 mx-auto mb-1" />
-                        <span className="text-[10px] font-semibold text-stone-600 block">Upload custom mood board image</span>
-                        <span className="text-[8px] text-stone-400">PNG, JPG, SVG styles</span>
+                        <Upload className={`w-5 h-5 mx-auto mb-1.5 transition-colors duration-200 ${isMoodboardDragging ? "text-[#C47A5C]" : "text-stone-400"}`} />
+                        <span className="text-xs font-semibold text-stone-700 block">
+                          {isMoodboardDragging ? "Drop your mood board here!" : "Upload custom mood board image"}
+                        </span>
+                        <span className="text-[9px] text-stone-400 block mt-0.5">Drag & drop or click to browse files (PNG, JPG, SVG styles)</span>
                       </div>
                     )}
                   </div>
@@ -950,6 +1000,44 @@ export default function App() {
                   placeholder="e.g. Master bed headboard alignment, pet friendly paths, low-E glass options, maximum hidden carpentry..."
                   className="w-full bg-stone-50 border border-stone-200 rounded-lg text-xs p-3 focus:outline-none focus:border-[#C47A5C] transition-all bg-white"
                 />
+              </div>
+
+              {/* 7. Verified Builder Matchmaking */}
+              <div className="flex flex-col gap-2 bg-[#F5EFE6]/50 p-4 rounded-xl border border-[#D5C29D]/40">
+                <div className="flex items-center gap-1.5">
+                  <Hammer className="w-3.5 h-3.5 text-[#C47A5C]" />
+                  <label className="text-xs uppercase tracking-widest text-[#1C242B] font-bold font-mono">07. Builder Connection</label>
+                </div>
+                <p className="text-[10px] text-stone-600 leading-normal">
+                  Connect with vetted HDB-licensed, CaseTrust-certified Singapore boutique contractors. Skip the renovation horror stories.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setInputs(prev => ({ ...prev, wantContractorConnect: !prev.wantContractorConnect }))}
+                  className={`w-full text-left p-3 rounded-lg border transition-all flex items-start gap-2.5 cursor-pointer ${
+                    inputs.wantContractorConnect 
+                      ? "bg-[#1C242B] border-[#1C242B] text-white shadow-sm" 
+                      : "bg-white border-stone-200 text-stone-700 hover:border-[#C47A5C] hover:bg-stone-50"
+                  }`}
+                >
+                  <div className={`w-4 h-4 rounded-md mt-0.5 border flex items-center justify-center shrink-0 ${
+                    inputs.wantContractorConnect 
+                      ? "bg-[#C47A5C] border-[#C47A5C] text-white" 
+                      : "bg-stone-50 border-stone-300 text-transparent"
+                  }`}>
+                    ✓
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <span className="text-xs font-bold block">
+                      Connect Me with Vetted Builders
+                    </span>
+                    <span className={`text-[9px] block mt-0.5 ${
+                      inputs.wantContractorConnect ? "text-amber-200" : "text-[#C47A5C] font-semibold"
+                    }`}>
+                      Nominal compilation fee of $15 SGD
+                    </span>
+                  </div>
+                </button>
               </div>
 
               {/* Action trigger button */}
@@ -1301,6 +1389,128 @@ export default function App() {
                         </ul>
                       </div>
                     ))}
+
+                    {/* CONTRACTOR MATCHMAKING OPT-IN & RESULTS AREA */}
+                    <div className="border border-stone-200 rounded-2xl p-5 bg-[#FAF7F2] border-l-4 border-l-[#C47A5C] shadow-xs">
+                      <div className="flex items-center justify-between border-b border-stone-200 pb-2 mb-3">
+                        <div className="flex items-center gap-2">
+                          <Hammer className="w-4 h-4 text-[#C47A5C]" />
+                          <h5 className="text-xs uppercase font-mono tracking-widest text-[#C47A5C] font-bold">
+                            CaseTrust™ Verified Builder Support
+                          </h5>
+                        </div>
+                        <span className={`text-[9px] font-mono px-2 py-0.5 rounded font-semibold ${
+                          (isContractorCheckedOut || inputs.wantContractorConnect)
+                            ? "bg-[#5B6D5E] text-white animate-pulse"
+                            : "bg-[#C47A5C]/10 text-[#C47A5C]"
+                        }`}>
+                          {(isContractorCheckedOut || inputs.wantContractorConnect) ? "Connection Active" : "Optional Matching Service"}
+                        </span>
+                      </div>
+
+                      {/* If connection is active/paid, show the matched contractors list */}
+                      {(isContractorCheckedOut || inputs.wantContractorConnect) ? (
+                        <div className="space-y-4">
+                          <p className="text-xs text-stone-700 leading-relaxed">
+                            🎉 <strong>Premium HDB-licensed builder connection is now active!</strong> Based on your budget of <strong>S$ {inputs.budget?.toLocaleString("en-SG")} SGD</strong>, selected location (<strong>{inputs.location}</strong>), and layout concept style, our studio has initialized coordination files for the following CaseTrust builders:
+                          </p>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div className="bg-white p-3 rounded-xl border border-stone-150 shadow-2xs">
+                              <span className="text-[9px] font-mono uppercase bg-[#1C242B]/10 text-stone-700 px-1.5 py-0.5 rounded">ID Builder A</span>
+                              <h6 className="text-xs font-bold text-stone-800 mt-1.5">Darwin Interior</h6>
+                              <p className="text-[10px] text-[#5B6D5E] mt-0.5 font-medium">★ 4.8 Rating • 150+ HDB Reviews</p>
+                              <p className="text-[10px] text-stone-500 mt-1 italic">"{inputs.location} Precinct Specialist & Certified HDB-Registered"</p>
+                            </div>
+                            <div className="bg-white p-3 rounded-xl border border-stone-150 shadow-2xs">
+                              <span className="text-[9px] font-mono uppercase bg-[#1C242B]/10 text-stone-700 px-1.5 py-0.5 rounded">ID Builder B</span>
+                              <h6 className="text-xs font-bold text-stone-800 mt-1.5">Ciseern Interior</h6>
+                              <p className="text-[10px] text-[#5B6D5E] mt-0.5 font-medium">★ 4.9 Rating • CaseTrust Award</p>
+                              <p className="text-[10px] text-stone-500 mt-1 italic font-light">"Highly rated bespoke carpentry & wood veneer specialists"</p>
+                            </div>
+                            <div className="bg-white p-3 rounded-xl border border-stone-150 shadow-2xs">
+                              <span className="text-[9px] font-mono uppercase bg-[#1C242B]/10 text-stone-700 px-1.5 py-0.5 rounded">ID Builder C</span>
+                              <h6 className="text-xs font-bold text-stone-800 mt-1.5">Ovon Design</h6>
+                              <p className="text-[10px] text-[#5B6D5E] mt-0.5 font-medium">★ 4.7 Rating • Low-E/Eco Specialist</p>
+                              <p className="text-[10px] text-stone-500 mt-1 italic">"Expert layout customizer with rapid 4-week fast-track builds"</p>
+                            </div>
+                          </div>
+
+                          <div className="bg-[#5B6D5E]/10 border border-[#5B6D5E]/30 rounded-xl p-3 flex sm:items-center justify-between gap-3 flex-col sm:flex-row text-xs">
+                            <div className="text-stone-700 leading-normal flex-1">
+                              We are forwarding your custom <strong>Spatial Notes</strong> and interactive colors. Vetted representatives will email comparative quotations to <strong className="text-[#1C242B]">{userAccount?.email || "okcheng77@gmail.com"}</strong>.
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  alert("Success! Builder specifications have been refreshed. Your Case File has been re-synchronized.");
+                                }}
+                                className="text-[10px] font-mono font-bold uppercase bg-[#5B6D5E] hover:bg-[#1C242B] text-white px-3 py-2 rounded-lg shrink-0 text-center cursor-pointer transition-all duration-250 hover:shadow-xs"
+                              >
+                                Sync Case File
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setInputs(prev => ({ ...prev, wantContractorConnect: false }));
+                                  setIsContractorCheckedOut(false);
+                                }}
+                                className="text-[10px] font-mono uppercase text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 px-2 py-2 rounded-lg transition"
+                                title="Cancel Matchmaking Support"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          <p className="text-xs text-stone-600 leading-relaxed font-light">
+                            Skip the renovation horror stories, phantom quotes, and poor quality woodwork. We partner with fully licensed, CaseTrust-certified boutique Singapore builders to help transform your custom layout into reality without the drama.
+                          </p>
+
+                          <div className="bg-white border border-stone-150 p-3.5 rounded-xl shadow-2xs">
+                            <span className="text-[10px] uppercase font-bold text-[#C47A5C] tracking-wide block mb-1">What's Included for a Nominal S$ 15 Fee:</span>
+                            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-stone-600 font-sans">
+                              <li className="flex items-center gap-1.5">
+                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                                3 Vetted, HDB-registered builders matched to budget
+                              </li>
+                              <li className="flex items-center gap-1.5">
+                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                                Detailed itemized materials quote comparisons
+                              </li>
+                              <li className="flex items-center gap-1.5">
+                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                                Priority HDB-permit fast-track paperwork processing
+                              </li>
+                              <li className="flex items-center gap-1.5">
+                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                                100% CaseTrust financial insurance protection
+                              </li>
+                            </ul>
+                          </div>
+
+                          <div className="flex flex-col sm:flex-row items-center justify-between bg-[#F5EFE6]/30 border border-[#D5C29D]/30 p-3 rounded-xl gap-3">
+                            <div className="text-[11px] text-stone-600 leading-tight flex-1">
+                              Would you like to get connected to reliable contractors for a nominal fee?
+                              <span className="block text-stone-800 font-bold mt-1 text-xs">One-time matching compilation fee: S$ 15 SGD</span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setInputs(prev => ({ ...prev, wantContractorConnect: true }));
+                                setContractorModalOpen(true);
+                              }}
+                              className="w-full sm:w-auto text-[10px] font-mono font-bold uppercase bg-[#C47A5C] hover:bg-[#1C242B] text-white px-4 py-2.5 rounded-lg transition duration-200 shrink-0 cursor-pointer text-center"
+                            >
+                              Connect Me for S$ 15
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
 
                     {/* ITERATIVE DESIGN REFINEMENT CARD PANEL */}
                     <div className="border border-stone-200 rounded-2xl p-5 bg-[#FAF9F6] mt-4 shadow-sm">
@@ -1683,6 +1893,119 @@ export default function App() {
 
             <p className="text-[10px] text-center text-stone-400 mt-4 leading-relaxed uppercase tracking-wider">
               Protected by simulated sandbox SSL certificate • 0$ actual charge
+            </p>
+
+          </div>
+        </div>
+      )}
+
+      {/* MOCK CONTRACTOR SERVICE CHECKOUT MODAL */}
+      {contractorModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#1C242B]/85 backdrop-blur-xs animate-fadeIn" id="contractor-checkout-modal">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full border border-stone-200 shadow-xl relative animate-slideUp">
+            
+            <button
+              onClick={() => {
+                setContractorModalOpen(false);
+              }}
+              className="absolute top-4 right-4 p-1.5 text-stone-400 hover:text-stone-800 rounded-lg hover:bg-stone-100 transition"
+              id="close-contractor-modal"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <span className="text-[10px] uppercase tracking-widest font-mono text-[#C47A5C] font-bold block mb-1">BOUTIQUE BUILDER MATCH SERVICE</span>
+            <h4 className="text-xl font-serif text-[#1C242B]" id="contractor-checkout-title">
+              Secure Premium Contractor Match
+            </h4>
+            <p className="text-xs text-stone-500 mt-1 leading-relaxed">
+              Activate your layout-synced builder request. 3 HDB-registered builders in <strong className="text-stone-800">{inputs.location || "Singapore"}</strong> will evaluate your project details.
+            </p>
+
+            <div className="my-5 p-4 bg-stone-50 rounded-xl border border-stone-200/60 flex items-center justify-between">
+              <div>
+                <span className="text-[10px] uppercase font-mono text-stone-400 block tracking-widest">CaseTrust™ Dispatch Fee</span>
+                <span className="text-sm font-semibold text-stone-800">Builder Matching Package</span>
+              </div>
+              <span className="text-xl font-serif font-bold text-[#1C242B]">S$ 15.00 SGD</span>
+            </div>
+
+            <form 
+              onSubmit={(e) => {
+                e.preventDefault();
+                setIsContractorCheckedOut(true);
+                setInputs(prev => ({ ...prev, wantContractorConnect: true }));
+                setContractorModalOpen(false);
+                alert("Success! Your nominal matching fee simulation was completed. Vetted builder files have been compiled.");
+              }} 
+              className="space-y-4"
+            >
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] uppercase font-bold tracking-wider text-stone-400" htmlFor="contractor-name">Lead Contact Name</label>
+                <input
+                  id="contractor-name"
+                  type="text"
+                  required
+                  placeholder="e.g. Kenneth Cheng"
+                  value={cardHolderName}
+                  onChange={(e) => setCardHolderName(e.target.value)}
+                  className="w-full bg-stone-50 border-b border-stone-200 py-1.5 text-sm focus:outline-none focus:border-[#C47A5C]"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] uppercase font-bold tracking-wider text-stone-400" htmlFor="contractor-card">Simulated Card Details</label>
+                <div className="relative">
+                  <CreditCard className="w-4 h-4 text-stone-400 absolute left-0 top-2.5" />
+                  <input
+                    id="contractor-card"
+                    type="text"
+                    required
+                    placeholder="4000 1234 5678 9010"
+                    maxLength={19}
+                    value={cardNumber}
+                    onChange={(e) => setCardNumber(e.target.value)}
+                    className="w-full pl-6 bg-stone-50 border-b border-stone-200 py-1.5 text-sm focus:outline-none focus:border-[#C47A5C]"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] uppercase font-bold tracking-wider text-stone-400" htmlFor="contractor-expiry">Expiry Date</label>
+                  <input
+                    id="contractor-expiry"
+                    type="text"
+                    required
+                    placeholder="MM/YY"
+                    maxLength={5}
+                    className="w-full bg-stone-50 border-b border-stone-200 py-1.5 text-sm focus:outline-none focus:border-[#C47A5C]"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] uppercase font-bold tracking-wider text-stone-400" htmlFor="contractor-cvc">CVC Code</label>
+                  <input
+                    id="contractor-cvc"
+                    type="text"
+                    required
+                    placeholder="123"
+                    maxLength={3}
+                    className="w-full bg-stone-50 border-b border-stone-200 py-1.5 text-sm focus:outline-none focus:border-[#C47A5C]"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-3.5 bg-[#C47A5C] hover:bg-[#b0674a] text-white text-xs font-mono tracking-widest uppercase font-bold rounded-xl transition duration-300 mt-4 shadow-sm cursor-pointer"
+                id="contractor-confirm-btn"
+              >
+                Assemble & Pay S$ 15 SGD
+              </button>
+            </form>
+
+            <p className="text-[10px] text-center text-stone-400 mt-4 leading-relaxed uppercase tracking-wider">
+              Secure Simulated Checkout • 0$ actual bank transaction
             </p>
 
           </div>
